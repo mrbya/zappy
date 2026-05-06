@@ -4,6 +4,8 @@
 
 `Zappy` is a project templating/scaffolding engine written in Rust to generate projects from a multitude of pre-defined templates. It also allows the user to create their own templates or generate ones from an existing project.
 
+> **Note:** This project is a re-implementation of the [zappy](https://gitlab.com/byarocks/zappy) luarock and takes heavy inspiration from the [spawn_point](https://github.com/normano/spawnpoint/tree/main) crate.
+
 <!-- toc -->
 
 - [Why?](#why)
@@ -143,6 +145,8 @@ Codebase documented using a consistent rustdoc style described in [rustdoc style
 ## Similar projects
 - [Zync](https://gitlab.com/byarocks/zync)
 - [Spawnpoint](https://github.com/normano/spawnpoint)
+
+> 🔔 **Note**: Both projects are present in the workspace under `docs/similar-projects`. They are, however, not part of the project.
 
 ## License
 
