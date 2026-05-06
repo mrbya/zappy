@@ -43,6 +43,7 @@ zappy-core              = { path = "crates/zappy-core" }
 zappy-fs                = { path = "crates/zappy-fs" }
 zappy-hooks             = { path = "crates/zappy-hooks" }
 # Other workspace deps
+clap = { version = "4", features = ["derive"] }
 
 [dependencies]
 
