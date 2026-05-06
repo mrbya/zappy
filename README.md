@@ -108,7 +108,7 @@ This installs just and its `init` bootstrap recipe installs all extra tooling us
 
 Run zappy:
 ```bash
-just run
+just run -- <pass in args>
 
 ```
 
