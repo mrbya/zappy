@@ -1,22 +1,80 @@
 [workspace]
 members = [
-
+    "./",
+    "crates/zappy-adapters",
+    "crates/zappy-cli",
+    "crates/zappy-core", 
+    "crates/zappy-fs", 
+    "crates/zappy-hooks",
 ]
 resolver = "2"
 
-[wroskpace.package]
-authors = ["mrbya <v.toth.svk2@gmail.com>"]
-description = "An electrifying project templating engine"
-edition = "2024"
-rust-version = "1.85.0"
-homepage = "https://gitlab.com/byacrates/zappy.git"
-repository = "https://gitlab.com/byacrates/zappy.git"
-license = "MIT OR Apache-2.0"
-keywords = ["zappy", "templates", "scaffolding"]
-categories = ["command-line-utilities"]
-version = "0.0.1-pre"
+[workspace.package]
+authors                 = ["mrbya <v.toth.svk2@gmail.com>"]
+description             = "An electrifying project templating engine"
+edition                 = "2024"
+rust-version            = "1.85.0"
+homepage                = "https://gitlab.com/byacrates/zappy.git"
+repository              = "https://gitlab.com/byacrates/zappy.git"
+license                 = "MIT OR Apache-2.0"
+keywords                = ["zappy", "templates", "scaffolding"]
+categories              = ["command-line-utilities"]
+version                 = "0.0.1-pre"
+
+[package]
+name                    = "zappy"
+authors.workspace       = true
+edition.workspace       = true
+rust-version.workspace  = true
+homepage.workspace      = true
+repository.workspace    = true
+license.workspace       = true
+keywords.workspace      = true
+categories.workspace    = true
+description.workspace   = true
+version.workspace       = true
+publish                 = true
 
 [workspace.dependencies]
+# Zappy crates
+zappy-adapters          = { path = "crates/zappy-adapters" }
+zappy-cli               = { path = "crates/zappy-cli" }
+zappy-core              = { path = "crates/zappy-core" }
+zappy-fs                = { path = "crates/zappy-fs" }
+zappy-hooks             = { path = "crates/zappy-hooks" }
+# Other workspace deps
+
+[dependencies]
+
+[dev-dependencies]
+criterion = "0.8"
+pretty_assertions = "1"
+
+[features]
+default = []
+full = []
+
+[lib]
+bench = false
+
+[[bin]]
+name = "zappy"
+path = "src/main.rs"
+bench = false
+
+[package.metadata.cargo-udeps.ignore]
+normal = [
+    "zappy",
+    "zappy-adapters",
+    "zappy-cli",
+    "zappy-core",
+    "zappy-fs",
+    "zappy-hooks"
+]
+development = ["criterion", "pretty_assertions"]
+
+[package.metadata.playground]
+features = ["full"]
 
 [profile.release]
 codegen-units = 1

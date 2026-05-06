@@ -1,0 +1,26 @@
+[package]
+name = "zappy-fs"
+version = "0.0.1-pre"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+description = "Zappy - Safe filesystem ops"
+
+[dependencies]
+
+[package.metadata.cargo-udeps.ignore]
+normal = [
+    "zappy",
+    "zappy-adapters",
+    "zappy-cli",
+    "zappy-core",
+    "zappy-fs",
+    "zappy-hooks"
+]
+development = ["criterion", "pretty_assertions"]

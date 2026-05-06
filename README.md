@@ -148,9 +148,17 @@ Codebase documented using a consistent rustdoc style described in [rustdoc style
 
 > 🔔 **Note**: Both projects are present in the workspace under `docs/similar-projects`. They are, however, not part of the project.
 
+---
+
 ## License
 
 Dual licensed under:
 
 - Apache License 2.0 (`LICENSE-APACHE`)
 - MIT (`LICENSE-MIT`)
+
+---
+
+## Repository maturity note
+
+This is an actively evolving implementation. The architecture is intentionally ahead of the current feature set so the project can grow without needing a rewrite.
