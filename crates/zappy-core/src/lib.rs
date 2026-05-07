@@ -30,7 +30,6 @@
     clippy::arithmetic_side_effects,
     clippy::modulo_arithmetic,
     clippy::as_conversions,
-    clippy::assertions_on_result_states,
     clippy::clone_on_ref_ptr,
     clippy::create_dir,
     clippy::default_union_representation,
@@ -83,10 +82,12 @@ pub mod validation;
 /// Template variable definitions.
 pub mod variables;
 
+// Re-exports.
 pub use error::{CoreError, CoreResult};
 pub use manifest::Manifest;
 pub use template::{SourceConfig, TemplateId, TemplateMetadata};
 pub use variables::{TransformKind, VariableSpec, VariableValue};
 
+// Tests.
 #[cfg(test)]
 mod tests;

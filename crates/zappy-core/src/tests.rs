@@ -182,3 +182,181 @@ project_nmae = "zappy-test-cli"
             .contains("validation.variables.project_nmae")
     );
 }
+
+#[test]
+fn rejects_variable_name_with_hyphen() {
+    let source = r#"
+[template]
+id = "rust-cli"
+name = "Rust CLI"
+
+[variables.project-name]
+default = "my-cli"
+"#;
+
+    let err = Manifest::from_toml_str(source, "zappy.toml")
+        .expect_err("variable name with hyphen should fail");
+
+    assert!(err.to_string().contains("project-name"));
+    assert!(err.to_string().contains("must not contain `-`"));
+}
+
+#[test]
+fn rejects_empty_variable_placeholder() {
+    let source = r#"
+[template]
+id = "rust-cli"
+name = "Rust CLI"
+
+[variables.project_name]
+default = "my-cli"
+
+[variables.project_name.placeholders]
+raw = ""
+"#;
+
+    let err = Manifest::from_toml_str(source, "zappy.toml")
+        .expect_err("empty variable placeholder should fail");
+
+    assert!(err.to_string().contains("placeholder"));
+    assert!(err.to_string().contains("must not be empty"));
+}
+
+#[test]
+fn rejects_empty_variable_prompt() {
+    let source = r#"
+[template]
+id = "rust-cli"
+name = "Rust CLI"
+
+[variables.project_name]
+prompt = ""
+default = "my-cli"
+"#;
+
+    let err = Manifest::from_toml_str(source, "zappy.toml")
+        .expect_err("empty variable prompt should fail");
+
+    assert!(err.to_string().contains("variable prompt"));
+    assert!(err.to_string().contains("must not be empty"));
+}
+
+#[test]
+fn rejects_parent_component_in_conditional_path() {
+    let source = r#"
+[template]
+id = "rust-cli"
+name = "Rust CLI"
+
+[[conditionals]]
+path = "../Dockerfile"
+when = "use_docker"
+"#;
+
+    let err = Manifest::from_toml_str(source, "zappy.toml")
+        .expect_err("conditional path with parent component should fail");
+
+    assert!(err.to_string().contains("conditional path"));
+    assert!(err.to_string().contains("must not contain `..`"));
+}
+
+#[test]
+fn rejects_empty_validation_output_dir_name() {
+    let source = r#"
+[template]
+id = "rust-cli"
+name = "Rust CLI"
+
+[validation]
+output_dir_name = ""
+"#;
+
+    let err = Manifest::from_toml_str(source, "zappy.toml")
+        .expect_err("empty validation output dir name should fail");
+
+    assert!(err.to_string().contains("validation.output_dir_name"));
+    assert!(err.to_string().contains("must not be empty"));
+}
+
+#[test]
+fn parses_transform_placeholders() {
+    let source = r#"
+[template]
+id = "rust-cli"
+name = "Rust CLI"
+
+[variables.project_name]
+prompt = "Project name"
+default = "my-cli"
+transforms = ["raw", "kebab", "snake", "pascal", "camel", "screaming_snake", "upper", "lower"]
+
+[variables.project_name.placeholders]
+raw = "__ZAPPY_PROJECT_NAME__"
+kebab = "__ZAPPY_PROJECT_NAME_KEBAB__"
+snake = "__ZAPPY_PROJECT_NAME_SNAKE__"
+pascal = "__ZAPPY_PROJECT_NAME_PASCAL__"
+camel = "__ZAPPY_PROJECT_NAME_CAMEL__"
+screaming_snake = "__ZAPPY_PROJECT_NAME_SCREAMING_SNAKE__"
+upper = "__ZAPPY_PROJECT_NAME_UPPER__"
+lower = "__ZAPPY_PROJECT_NAME_LOWER__"
+"#;
+
+    let manifest = Manifest::from_toml_str(source, "zappy.toml")
+        .expect("manifest with transform placeholders should parse");
+
+    let project_name = manifest
+        .variables
+        .get("project_name")
+        .expect("project_name variable should exist");
+
+    assert_eq!(
+        project_name.transforms.as_slice(),
+        &[
+            crate::variables::TransformKind::Raw,
+            crate::variables::TransformKind::Kebab,
+            crate::variables::TransformKind::Snake,
+            crate::variables::TransformKind::Pascal,
+            crate::variables::TransformKind::Camel,
+            crate::variables::TransformKind::ScreamingSnake,
+            crate::variables::TransformKind::Upper,
+            crate::variables::TransformKind::Lower,
+        ],
+    );
+
+    assert_eq!(
+        project_name
+            .placeholders
+            .get(&crate::variables::TransformKind::Raw),
+        Some(&"__ZAPPY_PROJECT_NAME__".to_owned()),
+    );
+    assert_eq!(
+        project_name
+            .placeholders
+            .get(&crate::variables::TransformKind::Kebab),
+        Some(&"__ZAPPY_PROJECT_NAME_KEBAB__".to_owned()),
+    );
+    assert_eq!(
+        project_name
+            .placeholders
+            .get(&crate::variables::TransformKind::ScreamingSnake),
+        Some(&"__ZAPPY_PROJECT_NAME_SCREAMING_SNAKE__".to_owned()),
+    );
+}
+
+#[test]
+fn rejects_invalid_transform_name() {
+    let source = r#"
+[template]
+id = "rust-cli"
+name = "Rust CLI"
+
+[variables.project_name]
+default = "my-cli"
+transforms = ["raw", "wat_case"]
+"#;
+
+    let err = Manifest::from_toml_str(source, "zappy.toml")
+        .expect_err("invalid transform name should fail");
+
+    assert!(matches!(err, crate::error::CoreError::ParseManifest { .. }));
+}

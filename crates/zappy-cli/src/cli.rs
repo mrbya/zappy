@@ -131,9 +131,9 @@ pub struct ValidateArgs {
 /// Zappy init command args.
 #[derive(Args, Debug, Clone)]
 pub struct InitArgs {
-    /// Path where the template skeleton should be created.
+    /// Output path where the template skeleton should be created.
     #[arg(short = 'o', long)]
-    pub path: PathBuf,
+    pub output: PathBuf,
 }
 
 /// Zappy create command args.
@@ -172,19 +172,5 @@ pub fn run() -> ExitCode {
         Command::Validate(args) => commands::validate(&args),
         Command::Init(args) => commands::init_template(&args),
         Command::Create(args) => commands::create(&args),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use clap::Parser;
-
-    use crate::cli::Cli;
-
-    #[test]
-    fn parse_list() {
-        let cli =
-            Cli::try_parse_from(["zappy", "list", "-i temp_dir", "-l rust"]).expect("parse ok");
-        assert!(matches!(cli.command, crate::cli::Command::List(_)));
     }
 }

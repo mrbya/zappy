@@ -30,7 +30,6 @@
     clippy::arithmetic_side_effects,
     clippy::modulo_arithmetic,
     clippy::as_conversions,
-    clippy::assertions_on_result_states,
     clippy::clone_on_ref_ptr,
     clippy::create_dir,
     clippy::default_union_representation,
@@ -72,3 +71,8 @@
 pub mod cli;
 /// Zappy CLI commands
 pub(crate) mod commands;
+
+// Tests.
+#[allow(clippy::panic)]
+#[cfg(test)]
+mod tests;
