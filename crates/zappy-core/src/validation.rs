@@ -4,7 +4,7 @@ use serde::Deserialize;
 use crate::{
     error::{CoreError, CoreResult},
     hooks::{validate_hooks, HookSpec, RawHookSpec},
-    variables::VariableValue,
+    variables::{RawVariableMap, RawVariableSpec, VariableMap, VariableValue},
 };
 
 /// Template validation configuration.
@@ -14,7 +14,7 @@ pub struct ValidationConfig {
     pub output_dir_name: Option<String>,
 
     /// Validation variables.
-    pub variables: IndexMap<String, VariableValue>,
+    pub variables: VariableMap,
 
     /// Validation setup command hooks config.
     pub setup: Vec<HookSpec>,
@@ -35,7 +35,7 @@ pub(crate) struct RawValidationConfig {
 
     /// Validation variables.
     #[serde(default)]
-    pub variables: IndexMap<String, VariableValue>,
+    pub variables: RawVariableMap,
 
     /// Validation setup command hooks config.
     #[serde(default)]
@@ -64,7 +64,7 @@ impl TryFrom<RawValidationConfig> for ValidationConfig {
 
         Ok(Self {
             output_dir_name: raw.output_dir_name,
-            variables: raw.variables,
+            variables: RawVariableSpec::validate_map(raw.variables)?,
             setup: validate_hooks("validation.setup", raw.setup)?,
             steps: validate_hooks("validation.steps", raw.steps)?,
             teardown: validate_hooks("validation.teardown", raw.teardown)?,

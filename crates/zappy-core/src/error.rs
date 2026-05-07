@@ -20,7 +20,7 @@ pub enum CoreError {
     },
 
     /// Failed to parse TOML manifest.
-    #[error("failed to parse manifest `{path}")]
+    #[error("failed to parse manifest `{path}`")]
     ParseManifest {
         /// Manifest path.
         path: PathBuf,

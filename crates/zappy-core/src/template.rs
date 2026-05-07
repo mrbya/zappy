@@ -154,7 +154,7 @@ impl TryFrom<RawTemplateMetadata> for TemplateMetadata {
 pub(crate) fn validate_field(field: &str, value: &str) -> CoreResult<()> {
     if value.trim().is_empty() {
         return Err(CoreError::invalid_manifest(format!(
-            "`{field} must not be empty`"
+            "`{field}` must not be empty"
         )));
     }
 

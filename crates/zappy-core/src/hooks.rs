@@ -147,9 +147,14 @@ pub(crate) fn validate_hooks(
     section: &str,
     raw_hooks: Vec<RawHookSpec>,
 ) -> CoreResult<Vec<HookSpec>> {
-    raw_hooks
-        .into_iter()
-        .map(HookSpec::try_from)
-        .collect::<CoreResult<Vec<_>>>()
-        .map_err(|error| CoreError::invalid_manifest(format!("{section}: {error}")))
+    let mut hooks = Vec::with_capacity(raw_hooks.len());
+
+    for (index, raw_hook) in raw_hooks.into_iter().enumerate() {
+        let hook = HookSpec::try_from(raw_hook)
+            .map_err(|error| CoreError::invalid_manifest(format!("{section}[{index}]: {error}")))?;
+
+        hooks.push(hook);
+    }
+
+    Ok(hooks)
 }
