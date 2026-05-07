@@ -138,7 +138,7 @@ impl TryFrom<RawHookSpec> for HookSpec {
 /// Vector of validated [`HookSpec`]s.
 ///
 /// # Errors
-/// Returns [`CoreError`] if:
+/// Returns [`CoreError::InvalidManifest`] if:
 /// - hook command is empty,
 /// - provided hook command working dir is invalid.
 pub(crate) fn validate_hooks(

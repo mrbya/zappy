@@ -156,6 +156,10 @@ impl TryFrom<RawManifest> for Manifest {
 
         let validation = raw.validation.map(ValidationConfig::try_from).transpose()?;
 
+        if let Some(validation) = validation.as_ref() {
+            validate_validation_variables(&variables, validation)?;
+        }
+
         Ok(Self {
             template,
             variables,
@@ -193,7 +197,7 @@ impl TryFrom<RawPathConfig> for PathConfig {
 /// Ok(()) on successful validation.
 ///
 /// # Errors
-/// Returns [`CoreError`] if the list contains an empty string item.
+/// Returns [`CoreError::InvalidManifest`] if the list contains an empty string item.
 fn validate_non_empty_list_items(section: &str, values: &[String]) -> CoreResult<()> {
     for value in values {
         if value.trim().is_empty() {
@@ -206,167 +210,32 @@ fn validate_non_empty_list_items(section: &str, values: &[String]) -> CoreResult
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    const MINIMAL_MANIFEST: &str = r#"
-[template]
-id = "rust-cli"
-name = "Rust CLI Application"
-description = "Small Rust CLI application."
-language = "rust"
-version = "0.1.0"
-
-[variables.project_name]
-prompt = "Project name"
-default = "my-cli"
-required = true
-
-[variables.description]
-prompt = "Project description"
-default = "A small Rust CLI application."
-"#;
-
-    #[test]
-    fn parses_minimal_manifest() {
-        let manifest =
-            Manifest::from_toml_str(MINIMAL_MANIFEST, "zappy.toml").expect("manifest should parse");
-
-        assert_eq!(manifest.template.id.as_str(), "rust-cli");
-        assert_eq!(manifest.template.name, "Rust CLI Application");
-        assert_eq!(manifest.template.source.root.as_str(), "template");
-        assert!(manifest.variables.contains_key("project_name"));
-        assert!(manifest.variables.contains_key("description"));
+/// Validates validation variable names.
+///
+/// Validates whether validation config variables
+/// reference variables defined in template manifest.
+///
+/// # Arguments
+/// - `variables`: template manifest variable map to validate against,
+/// - `validation`: validation config which variables to validate.
+///
+/// # Returns
+/// Ok(()) on successful validation.
+///
+/// # Errors
+/// Returns [`CoreError::InvalidManifest`] if validation config contains
+/// a variable that is not defined in the template manifest.
+fn validate_validation_variables(
+    variables: &VariableMap,
+    validation: &ValidationConfig,
+) -> CoreResult<()> {
+    for name in validation.variables.keys() {
+        if !variables.contains_key(name) {
+            return Err(CoreError::invalid_manifest(format!(
+                "`validation.variables.{name}` does not reference a declared template variable"
+            )));
+        }
     }
 
-    #[test]
-    fn rejects_empty_template_id() {
-        let source = r#"
-[template]
-id = ""
-name = "Broken"
-"#;
-
-        let err = Manifest::from_toml_str(source, "zappy.toml")
-            .expect_err("empty template id should fail");
-
-        assert!(err.to_string().contains("template.id"));
-    }
-
-    #[test]
-    fn rejects_empty_template_name() {
-        let source = r#"
-[template]
-id = "broken"
-name = ""
-"#;
-
-        let err = Manifest::from_toml_str(source, "zappy.toml")
-            .expect_err("empty template name should fail");
-
-        assert!(err.to_string().contains("template.name"));
-    }
-
-    #[test]
-    fn defaults_source_root_to_template() {
-        let manifest =
-            Manifest::from_toml_str(MINIMAL_MANIFEST, "zappy.toml").expect("manifest should parse");
-
-        assert_eq!(manifest.template.source.root.as_str(), "template");
-    }
-
-    #[test]
-    fn rejects_absolute_source_root() {
-        let source = r#"
-[template]
-id = "broken"
-name = "Broken"
-
-[template.source]
-root = "/tmp/template"
-"#;
-
-        let err = Manifest::from_toml_str(source, "zappy.toml")
-            .expect_err("absolute source root should fail");
-
-        assert!(err.to_string().contains("template.source.root"));
-    }
-
-    #[test]
-    fn parses_paths_config() {
-        let source = r#"
-[template]
-id = "rust-cli"
-name = "Rust CLI"
-
-[paths]
-exclude = [".git", "target"]
-binary_extensions = ["png", "jpg"]
-binary_files = ["Cargo.lock"]
-"#;
-
-        let manifest =
-            Manifest::from_toml_str(source, "zappy.toml").expect("manifest should parse");
-
-        assert_eq!(manifest.paths.exclude, [".git", "target"]);
-        assert_eq!(manifest.paths.binary_extensions, ["png", "jpg"]);
-        assert_eq!(manifest.paths.binary_files, ["Cargo.lock"]);
-    }
-
-    #[test]
-    fn parses_hooks_and_validation_steps() {
-        let source = r#"
-[template]
-id = "rust-cli"
-name = "Rust CLI"
-
-[[hooks.post_generate]]
-name = "Format"
-command = "cargo"
-args = ["fmt"]
-optional = true
-
-[validation.variables]
-project_name = "zappy-test-cli"
-
-[[validation.steps]]
-name = "Test"
-command = "cargo"
-args = ["test"]
-"#;
-
-        let manifest =
-            Manifest::from_toml_str(source, "zappy.toml").expect("manifest should parse");
-
-        assert_eq!(manifest.hooks.post_generate.len(), 1);
-
-        let validation = manifest.validation.expect("validation should exist");
-        assert_eq!(validation.steps.len(), 1);
-        assert_eq!(
-            validation
-                .steps
-                .first()
-                .expect("element 0 should be populated")
-                .command,
-            "cargo"
-        );
-    }
-
-    #[test]
-    fn rejects_empty_hook_command() {
-        let source = r#"
-[template]
-id = "rust-cli"
-name = "Rust CLI"
-
-[[hooks.post_generate]]
-command = ""
-"#;
-
-        let err = Manifest::from_toml_str(source, "zappy.toml")
-            .expect_err("empty hook command should fail");
-
-        assert!(err.to_string().contains("hook command"));
-    }
+    Ok(())
 }

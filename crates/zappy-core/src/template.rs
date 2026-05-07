@@ -148,7 +148,7 @@ impl TryFrom<RawTemplateMetadata> for TemplateMetadata {
 /// Ok(()) on successful validation.
 ///
 /// # Errors
-/// Returns [`CoreError`] if:
+/// Returns [`CoreError::InvalidManifest`] if:
 /// - field value empty,
 /// - field contains characters outside ASCII letters, `-` and `_`.
 pub(crate) fn validate_field(field: &str, value: &str) -> CoreResult<()> {
@@ -191,7 +191,7 @@ pub(crate) fn validate_field(field: &str, value: &str) -> CoreResult<()> {
 /// Ok(()) on successful validation.
 ///
 /// # Errors
-/// Returns [`CoreError`] if:
+/// Returns [`CoreError::InvalidManifest`] if:
 /// - path is empty,
 /// - path path is absolute,
 /// - path contains `..` path components.

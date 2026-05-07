@@ -87,3 +87,6 @@ pub use error::{CoreError, CoreResult};
 pub use manifest::Manifest;
 pub use template::{SourceConfig, TemplateId, TemplateMetadata};
 pub use variables::{TransformKind, VariableSpec, VariableValue};
+
+#[cfg(test)]
+mod tests;

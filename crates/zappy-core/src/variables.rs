@@ -190,7 +190,7 @@ impl TryFrom<RawVariableSpec> for VariableSpec {
 /// Ok(()) on successful validation.
 ///
 /// # Errors
-/// Returns [`CoreError`] if:
+/// Returns [`CoreError::InvalidManifest`] if:
 /// - name empty,
 /// - name contains characters outside ASCII letters and `_`.
 fn validate_variable_name(name: &str) -> CoreResult<()> {
