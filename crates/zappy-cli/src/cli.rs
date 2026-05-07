@@ -68,11 +68,11 @@ pub struct ListArgs {
 #[derive(Args, Debug, Clone)]
 pub struct InfoArgs {
     /// Template ID to inspect.
-    #[arg(short = 'i', long)]
+    #[arg(short = 't', long)]
     pub template: String,
 
     /// Optional templates directory override.
-    #[arg(short = 'd', long)]
+    #[arg(short = 'i', long)]
     pub templates_dir: Option<PathBuf>,
 }
 

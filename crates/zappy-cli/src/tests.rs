@@ -62,7 +62,7 @@ fn parses_info_command() {
 #[test]
 fn parses_info_alias() {
     let cli =
-        Cli::try_parse_from(["zappy", "i", "-i", "rust-cli"]).expect("info alias should parse");
+        Cli::try_parse_from(["zappy", "i", "-t", "rust-cli"]).expect("info alias should parse");
 
     let Command::Info(args) = cli.command else {
         panic!("expected info command");
