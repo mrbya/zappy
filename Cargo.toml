@@ -43,7 +43,11 @@ zappy-core              = { path = "crates/zappy-core" }
 zappy-fs                = { path = "crates/zappy-fs" }
 zappy-hooks             = { path = "crates/zappy-hooks" }
 # Other workspace deps
-clap = { version = "4", features = ["derive"] }
+clap                    = { version = "4", features = ["derive"] }
+camino                  = { version = "1", features = ["serde1"] }
+indexmap                = { version = "2", features = ["serde"] }
+thiserror               = { version = "2" }
+toml                    = { version = "1" }
 
 [dependencies]
 zappy-cli.workspace = true
