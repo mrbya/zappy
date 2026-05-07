@@ -13,6 +13,12 @@ categories.workspace = true
 description = "Zappy - Safe filesystem ops"
 
 [dependencies]
+zappy-core.workspace = true
+directories.workspace = true
+thiserror.workspace = true
+
+[dev.dependencies]
+tempfile.workspace = true
 
 [package.metadata.cargo-udeps.ignore]
 normal = [

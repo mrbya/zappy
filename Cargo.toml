@@ -49,6 +49,10 @@ indexmap                = { version = "2", features = ["serde"] }
 serde                   = { version = "1" }
 thiserror               = { version = "2" }
 toml                    = { version = "1" }
+directories             = { version = "6" }
+tempfile                = { version = "3" }
+assert_cmd              = { version = "2" }
+predicates              = { version = "3" }
 
 [dependencies]
 zappy-cli.workspace = true
