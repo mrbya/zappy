@@ -1,4 +1,6 @@
-use std::{collections::HashSet, path::PathBuf};
+use std::collections::HashSet;
+use std::env;
+use std::path::PathBuf;
 
 use zappy_core::Manifest;
 
@@ -105,6 +107,95 @@ impl TemplateCatalogue {
     }
 }
 
+/// Discovers templates using the standard Zappy search-path model.
+///
+/// # Arguments
+/// - `config`: template search path discovery config.
+///
+/// # Returns
+/// A complete [`TemplateCatalogue`] on success.
+///
+/// # Errors
+/// Returns following errors:
+/// - [`FsError::ResolveSearchPaths`] on search path resolution failure,
+/// - Other [`FsError`] on template discovery failure (see [`discover_templates_from_search_paths`]).
+pub fn discover_templates(config: &DiscoveryConfig) -> FsResult<TemplateCatalogue> {
+    let search_paths = resolve_template_search_paths(config)?;
+    discover_templates_from_search_paths(search_paths)
+}
+
+/// Resolves templat esearch paths.
+///
+/// # Arguments
+/// - `config`: template path discovery config.
+///
+/// # Returns
+/// Vector of resolved [`TemplateSearchPath`] paths.
+///
+/// # Errors
+/// Returns [`FsError::ResolveSearchPaths`] if no search path is resolved.
+pub fn resolve_template_search_paths(
+    config: &DiscoveryConfig,
+) -> FsResult<Vec<TemplateSearchPath>> {
+    if let Some(templates_dir) = config.templates_dir.as_ref() {
+        return Ok(vec![TemplateSearchPath {
+            kind: TemplateSearchPathKind::Explicit,
+            path: templates_dir.clone(),
+            required: true,
+        }]);
+    }
+
+    let mut paths = Vec::new();
+
+    if let Some(path) = env::var_os("ZAPPY_TEMPLATES_DIR") {
+        paths.push(TemplateSearchPath {
+            kind: TemplateSearchPathKind::EnvironmentTemplatesDir,
+            path: PathBuf::from(path),
+            required: true,
+        });
+    }
+
+    if let Some(path) = env::var_os("ZAPPY_CONFIG") {
+        paths.push(TemplateSearchPath {
+            kind: TemplateSearchPathKind::EnvironmentConfigTemplates,
+            path: PathBuf::from(path).join("templates"),
+            required: false,
+        });
+    }
+
+    if let Some(project_dirs) = directories::ProjectDirs::from("", "", "zappy") {
+        paths.push(TemplateSearchPath {
+            kind: TemplateSearchPathKind::PlatformConfig,
+            path: project_dirs.config_dir().join("templates"),
+            required: false,
+        });
+    }
+
+    if let Ok(current_exe) = env::current_exe() {
+        if let Some(exe_dir) = current_exe.parent() {
+            paths.push(TemplateSearchPath {
+                kind: TemplateSearchPathKind::ExecutableRelative,
+                path: exe_dir.join("templates"),
+                required: false,
+            });
+        }
+    }
+
+    if let Ok(current_dir) = env::current_dir() {
+        paths.push(TemplateSearchPath {
+            kind: TemplateSearchPathKind::CurrentWorkingDirectory,
+            path: current_dir.join("templates"),
+            required: false,
+        });
+    }
+
+    if paths.is_empty() {
+        return Err(Box::new(FsError::ResolveSearchPaths));
+    }
+
+    Ok(paths)
+}
+
 /// Discovers templates from already-resolved search paths.
 ///
 /// # Arguments
@@ -117,7 +208,7 @@ impl TemplateCatalogue {
 /// Returns following errors:
 /// - [`FsError::LoadManifest`] if manifest load/parse fails,
 /// - Other [`FsError`] if template dir discovery fails.
-fn discover_templates_from_search_paths(
+pub(crate) fn discover_templates_from_search_paths(
     search_paths: Vec<TemplateSearchPath>,
 ) -> FsResult<TemplateCatalogue> {
     let mut templates = Vec::new();

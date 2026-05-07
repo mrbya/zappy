@@ -8,6 +8,10 @@ pub type FsResult<T> = std::result::Result<T, Box<FsError>>;
 /// Filesystem/discovery errors.
 #[derive(Debug, Error)]
 pub enum FsError {
+    /// Failed to resolve search paths (none were discovered).
+    #[error("failed to resolve search paths")]
+    ResolveSearchPaths,
+
     /// Required template search path does not exist.
     #[error("template search path `{path}` does not exist")]
     SearchPathMissing {

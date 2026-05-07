@@ -71,3 +71,15 @@ pub mod discover;
 
 /// Filesystem error types.
 pub mod error;
+
+// Re-exports.
+pub use discover::{
+    DiscoveredTemplate, DiscoveryConfig, TemplateCatalogue, TemplateSearchPath,
+    TemplateSearchPathKind, discover_templates, resolve_template_search_paths,
+};
+pub use error::{FsError, FsResult};
+
+// Tests.
+#[allow(clippy::panic)]
+#[cfg(test)]
+mod tests;

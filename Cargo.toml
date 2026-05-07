@@ -46,7 +46,7 @@ zappy-hooks             = { path = "crates/zappy-hooks" }
 clap                    = { version = "4", features = ["derive"] }
 camino                  = { version = "1", features = ["serde1"] }
 indexmap                = { version = "2", features = ["serde"] }
-serde                   = { version = "1" }
+serde                   = { version = "1", features = ["derive"] }
 thiserror               = { version = "2" }
 toml                    = { version = "1" }
 directories             = { version = "6" }
@@ -60,6 +60,9 @@ zappy-cli.workspace = true
 [dev-dependencies]
 criterion = "0.8"
 pretty_assertions = "1"
+assert_cmd.workspace = true
+predicates.workspace = true
+tempfile.workspace = true
 
 [features]
 default = []
