@@ -733,6 +733,7 @@ version = "0.0.1-pre"
 dependencies = [
  "criterion",
  "pretty_assertions",
+ "zappy-cli",
 ]
 
 [[package]]

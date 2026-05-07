@@ -1,4 +1,7 @@
-//! Zappy binary crate
+//! Public facade of the `zappy` project.
+//!
+//! The root crate owns the installable `zappy` binary. Most implementation
+//! details live in the internal workspace crates.
 
 #![allow(clippy::module_name_repetitions)]
 // clippy WARN level lints
@@ -62,3 +65,5 @@
     clippy::unseparated_literal_suffix,
     clippy::verbose_file_reads
 )]
+
+pub use zappy_cli::cli::run;

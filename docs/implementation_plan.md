@@ -119,7 +119,7 @@ __ZAPPY_PROJECT_NAME_SNAKE__
 __ZAPPY_PROJECT_NAME_PASCAL__
 ```
 
-The old Lua `#{VAR}` syntax may be supported as a legacy compatibility mode later, but should not be the primary syntax for the new engine.
+The old Lua `#{VAR}` syntax won't be supported as a legacy compatibility mode and will remain the only syntax for the new engine.
 
 ### 3.4 Separate Planning from Writing
 
@@ -171,20 +171,9 @@ To keep the spirit of old Zappy and make migration pleasant, provide aliases:
 ```bash
 zappy ls       # alias for list
 zappy gen      # alias for new/generate
-zappy create   # preserved command name
 ```
 
-Possible mapping:
-
-```bash
-zappy gen -t rust-cli -n my-tool -p ./out -a license=MIT
-```
-
-Equivalent modern form:
-
-```bash
-zappy new rust-cli my-tool --output ./out --var license=MIT
-```
+Both aliases will use the new engine argument mapping.
 
 ### 4.3 Common Workflows
 
@@ -838,7 +827,6 @@ Optional:
 - `[hooks]`
 - `[validation]`
 - `[recipe]`, future feature
-- `[legacy]`, future compatibility feature
 
 ---
 
@@ -1337,8 +1325,6 @@ Preserve this, but split into clearer workflows:
 zappy create --from ./existing-project --name my-template
 zappy init-template ./templates/my-template
 ```
-
-Keep `zappy create -e` as a compatibility alias for `init-template`.
 
 ### 16.1 `init-template`
 
@@ -1984,12 +1970,11 @@ Crate focus:
 Tasks:
 
 1. Implement `zappy init-template <path>`.
-2. Add compatibility alias `zappy create -e`.
-3. Implement `zappy create --from <project>`.
-4. Copy project into `template/` while excluding junk directories.
-5. Generate starter `zappy.toml`.
-6. Optionally replace provided variable values with placeholders.
-7. Add docs explaining manual cleanup/editing.
+2. Implement `zappy create --from <project>`.
+3. Copy project into `template/` while excluding junk directories.
+4. Generate starter `zappy.toml`.
+5. Optionally replace provided variable values with placeholders.
+6. Add docs explaining manual cleanup/editing.
 
 Acceptance criteria:
 
@@ -2172,7 +2157,6 @@ Instead:
 | `hooks.post` | `[[hooks.post_generate]]` |
 | `zappy gen` | `zappy new` / `zappy gen` alias |
 | `zappy ls` | `zappy list` / `zappy ls` alias |
-| `zappy create -e` | `zappy init-template` / compatibility alias |
 | `$ZAPPY_CONFIG/templates` | supported template search path |
 | `zconfig.lua` | `config.toml` |
 
@@ -2307,13 +2291,13 @@ However, the architecture should leave room for these features.
 These can be decided during implementation:
 
 1. Should the primary command be `new` or `gen`?
-   - Recommendation: primary `new`, compatibility alias `gen`.
+   - Recommendation: primary `new`, thin compatibility alias `gen`.
 
 2. Should the manifest be TOML-only initially?
    - Recommendation: yes.
 
 3. Should the old `#{VAR}` syntax be supported in MVP?
-   - Recommendation: no, but reserve a future compatibility mode.
+   - Recommendation: no.
 
 4. Should hooks run by default?
    - Recommendation: yes for post-generation, but provide `--no-hooks` once hooks exist.
@@ -2353,4 +2337,3 @@ Once that is solid, the project can grow naturally into:
 - richer conditionals;
 - remote template catalogs;
 - better machine-readable output for agents and CI.
-

@@ -3,8 +3,8 @@ members = [
     "./",
     "crates/zappy-adapters",
     "crates/zappy-cli",
-    "crates/zappy-core", 
-    "crates/zappy-fs", 
+    "crates/zappy-core",
+    "crates/zappy-fs",
     "crates/zappy-hooks",
 ]
 resolver = "2"
@@ -46,6 +46,7 @@ zappy-hooks             = { path = "crates/zappy-hooks" }
 clap = { version = "4", features = ["derive"] }
 
 [dependencies]
+zappy-cli.workspace = true
 
 [dev-dependencies]
 criterion = "0.8"

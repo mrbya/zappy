@@ -1,14 +1,8 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+//! Filesystem support for Zappy.
+//!
+//! This crate will eventually own template discovery, deterministic traversal,
+//! path safety, text/binary classification, dry-run planning inputs, and safe
+//! materialization of generated projects.
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+/// Current crate version.
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
