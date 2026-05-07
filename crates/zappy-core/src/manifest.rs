@@ -1,15 +1,14 @@
-use std::{fs, path::Path};
+use std::fs;
+use std::path::Path;
 
 use serde::Deserialize;
 
-use crate::{
-    condition::{ConditionalPath, RawConditionalPath},
-    error::{CoreError, CoreResult},
-    hooks::{HookConfig, RawHookConfig},
-    template::{RawTemplateMetadata, TemplateMetadata},
-    validation::{RawValidationConfig, ValidationConfig},
-    variables::{RawVariableMap, RawVariableSpec, VariableMap},
-};
+use crate::condition::{ConditionalPath, RawConditionalPath};
+use crate::error::{CoreError, CoreResult};
+use crate::hooks::{HookConfig, RawHookConfig};
+use crate::template::{RawTemplateMetadata, TemplateMetadata};
+use crate::validation::{RawValidationConfig, ValidationConfig};
+use crate::variables::{RawVariableMap, RawVariableSpec, VariableMap};
 
 /// Fully validated Zappy template manifest.
 #[derive(Debug, Clone, PartialEq, Eq)]

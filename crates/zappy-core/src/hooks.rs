@@ -2,10 +2,8 @@ use camino::Utf8PathBuf;
 use indexmap::IndexMap;
 use serde::Deserialize;
 
-use crate::{
-    error::{CoreError, CoreResult},
-    template::validate_path,
-};
+use crate::error::{CoreError, CoreResult};
+use crate::template::validate_path;
 
 /// Hooks attached to normal generation.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]

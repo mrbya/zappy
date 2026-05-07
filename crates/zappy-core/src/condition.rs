@@ -1,10 +1,8 @@
 use camino::Utf8PathBuf;
 use serde::Deserialize;
 
-use crate::{
-    error::{CoreError, CoreResult},
-    template::validate_path,
-};
+use crate::error::{CoreError, CoreResult};
+use crate::template::validate_path;
 
 /// A path included only when a variable condition evaluates to true.
 #[derive(Debug, Clone, PartialEq, Eq)]
