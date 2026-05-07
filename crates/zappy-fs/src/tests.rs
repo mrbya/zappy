@@ -29,14 +29,14 @@ fn discovers_templates_from_explicit_directory() {
 
     write_template(templates_root, "rust-cli", "rust-cli", "Rust CLI", "rust");
 
-    let catalog = discover_templates(&DiscoveryConfig {
+    let catalogue = discover_templates(&DiscoveryConfig {
         templates_dir: Some(templates_root.to_path_buf()),
     })
     .expect("templates should be discovered");
 
-    assert_eq!(catalog.templates().len(), 1);
+    assert_eq!(catalogue.templates().len(), 1);
 
-    let template = catalog
+    let template = catalogue
         .find_by_id("rust-cli")
         .expect("rust-cli template should be discovered");
 
@@ -59,12 +59,12 @@ language = "rust"
     )
     .expect("manifest should be written");
 
-    let catalog = discover_templates(&DiscoveryConfig {
+    let catalogue = discover_templates(&DiscoveryConfig {
         templates_dir: Some(temp_dir.path().to_path_buf()),
     })
     .expect("template should be discovered");
 
-    assert!(catalog.find_by_id("single-template").is_some());
+    assert!(catalogue.find_by_id("single-template").is_some());
 }
 
 #[test]
@@ -92,7 +92,7 @@ fn duplicate_template_ids_are_shadowed() {
     write_template(&first_root, "template-a", "same-id", "First", "rust");
     write_template(&second_root, "template-b", "same-id", "Second", "rust");
 
-    let catalog = discover_templates_from_search_paths(vec![
+    let catalogue = discover_templates_from_search_paths(vec![
         TemplateSearchPath {
             kind: TemplateSearchPathKind::Explicit,
             path: first_root,
@@ -106,16 +106,16 @@ fn duplicate_template_ids_are_shadowed() {
     ])
     .expect("templates should be discovered");
 
-    assert_eq!(catalog.templates().len(), 1);
-    assert_eq!(catalog.shadowed().len(), 1);
+    assert_eq!(catalogue.templates().len(), 1);
+    assert_eq!(catalogue.shadowed().len(), 1);
 
-    let active = catalog
+    let active = catalogue
         .find_by_id("same-id")
         .expect("active template should exist");
 
     assert_eq!(active.manifest.template.name, "First");
     assert_eq!(
-        catalog
+        catalogue
             .shadowed()
             .first()
             .expect("should be populated")

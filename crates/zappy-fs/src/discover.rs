@@ -54,7 +54,7 @@ pub struct TemplateSearchPath {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DiscoveredTemplate {
     /// Search path this template came from.
-    pub searc_path: TemplateSearchPath,
+    pub search_path: TemplateSearchPath,
 
     /// Template directory containing `zappy.toml`.
     pub template_dir: PathBuf,
@@ -230,7 +230,7 @@ pub(crate) fn discover_templates_from_search_paths(
             let id = manifest.template.id.as_str().to_owned();
 
             let discovered = DiscoveredTemplate {
-                searc_path: search_path.clone(),
+                search_path: search_path.clone(),
                 template_dir,
                 manifest_path,
                 manifest,
