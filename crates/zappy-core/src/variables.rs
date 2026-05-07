@@ -153,14 +153,17 @@ impl TryFrom<RawVariableSpec> for VariableSpec {
             }
         }
 
-        if raw.required
-            && raw.default.is_none()
-            && (raw.prompt.is_none()
-                || raw
-                    .prompt
-                    .as_ref()
-                    .is_some_and(|prompt| prompt.trim().is_empty()))
+        if raw
+            .prompt
+            .as_ref()
+            .is_some_and(|prompt| prompt.trim().is_empty())
         {
+            return Err(CoreError::invalid_manifest(
+                "variable prompt must not be empty when provided",
+            ));
+        }
+
+        if raw.required && raw.default.is_none() && raw.prompt.is_none() {
             return Err(CoreError::invalid_manifest(
                 "required variable without a default value should define a prompt",
             ));
