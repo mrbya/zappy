@@ -1,0 +1,9 @@
+[template]
+id = "rust-cli"
+name = "rust-cli"
+description = "Rust CLI app scaffold"
+language = "rust"
+version = "0.1.0"
+
+[template.source]
+root = "template"
