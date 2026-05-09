@@ -1290,8 +1290,11 @@ version = "0.0.1-pre"
 name = "zappy-cli"
 version = "0.0.1"
 dependencies = [
+ "assert_cmd",
  "clap",
+ "predicates",
  "serde",
+ "zappy-core",
  "zappy-fs",
 ]
 
@@ -1300,6 +1303,7 @@ name = "zappy-core"
 version = "0.0.1"
 dependencies = [
  "camino",
+ "heck",
  "indexmap",
  "serde",
  "thiserror",
