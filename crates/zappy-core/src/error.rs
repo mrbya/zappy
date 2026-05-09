@@ -36,6 +36,43 @@ pub enum CoreError {
         /// Human-readable validation message.
         message: String,
     },
+
+    /// Invalid CLI-style variable override.
+    #[error("invalid variable override `{value}`, expected `key=value`")]
+    InvalidVariableOverride {
+        /// Invalid override string,
+        value: String,
+    },
+
+    /// Unknown variable provided by an input source.
+    #[error("unknown variable `{name}` in {vsource}")]
+    UnknownVariable {
+        /// Variable name.
+        name: String,
+
+        /// Source, where the variable was provided.
+        vsource: &'static str,
+    },
+
+    /// A required variable was not resovled/provided.
+    #[error("missing required variable `{name}`")]
+    MissingRequiredVariable {
+        /// Variable name.
+        name: String,
+    },
+
+    /// Variable value is not one of the manifest-defined choices.
+    #[error("invalid value `{value}` for variable `{name}, expected one of: {choices}`")]
+    InvalidVariableChoice {
+        /// Variable name.
+        name: String,
+
+        /// Invalid value.
+        value: String,
+
+        /// Allowed choices.
+        choices: String,
+    },
 }
 
 impl CoreError {

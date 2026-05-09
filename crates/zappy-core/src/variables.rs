@@ -8,6 +8,8 @@ use crate::template::validate_field;
 pub type VariableMap = IndexMap<String, VariableSpec>;
 /// Type alias for an `IndexMap` of raw template variables.
 pub(crate) type RawVariableMap = IndexMap<String, RawVariableSpec>;
+/// Type alias for resolved variable values.
+pub type VariableValueMap = IndexMap<String, VariableValue>;
 
 /// Template variable specification.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -46,6 +48,39 @@ pub enum VariableValue {
 
     /// Integer variable.
     Integer(i64),
+}
+
+impl VariableValue {
+    /// Parses value from a CLI override.
+    ///
+    /// Boolean and integer values are parsed into typed values.
+    /// Everything else remains a string.
+    #[must_use]
+    pub fn parse_cli_value(value: &str) -> Self {
+        match value {
+            "true" | "yes" | "y" | "Y" | "1" => Self::Bool(true),
+            "false" | "no" | "n" | "N" | "0" => Self::Bool(false),
+            _ => value
+                .parse::<i64>()
+                .map_or_else(|_| Self::String(String::from(value)), Self::Integer),
+        }
+    }
+
+    /// Converts variable value into a rederable string.
+    #[must_use]
+    pub fn render(&self) -> String {
+        match self.to_owned() {
+            Self::String(value) => value,
+            Self::Bool(value) => {
+                if value {
+                    String::from("true")
+                } else {
+                    String::from("false")
+                }
+            }
+            Self::Integer(value) => format!("{value}"),
+        }
+    }
 }
 
 /// Supported variable transformations.
@@ -181,6 +216,46 @@ impl TryFrom<RawVariableSpec> for VariableSpec {
     }
 }
 
+/// Parses CLI-style variable overrides in `key=value` form.
+///
+/// # Arguments
+/// - `overrides`: vector/list of passed in vvariable overrides.
+///
+/// # Returns
+/// [`VariableValueMap`] of parsed variable values.
+///
+/// # Errors
+/// Returns [`CoreError::InvalidVariableOverride`] on invalid passed in overrides.
+pub fn parse_variable_overrides<I, S>(overrides: I) -> CoreResult<VariableValueMap>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<str>,
+{
+    let mut values = VariableValueMap::new();
+
+    for override_value in overrides {
+        let override_value = override_value.as_ref();
+
+        let Some((name, value)) = override_value.split_once('=') else {
+            return Err(CoreError::InvalidVariableOverride {
+                value: String::from(override_value),
+            });
+        };
+
+        if name.trim().is_empty() {
+            return Err(CoreError::InvalidVariableOverride {
+                value: String::from(override_value),
+            });
+        }
+
+        validate_variable_name(name)?;
+
+        values.insert(String::from(name), VariableValue::parse_cli_value(value));
+    }
+
+    Ok(values)
+}
+
 /// Validates variable name.
 ///
 /// # Arguments
@@ -193,7 +268,7 @@ impl TryFrom<RawVariableSpec> for VariableSpec {
 /// Returns [`CoreError::InvalidManifest`] if:
 /// - name empty,
 /// - name contains characters outside ASCII letters and `_`.
-fn validate_variable_name(name: &str) -> CoreResult<()> {
+pub(crate) fn validate_variable_name(name: &str) -> CoreResult<()> {
     validate_field("variable.name", name)?;
 
     if name.contains('-') {

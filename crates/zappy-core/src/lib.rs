@@ -75,8 +75,12 @@ pub mod error;
 pub mod hooks;
 /// Template manifest parsing.
 pub mod manifest;
+/// Variable resolution.
+pub mod resolution;
 /// Template metadata parsing.
 pub mod template;
+/// Variable transforms.
+pub mod transform;
 /// Validation model.
 pub mod validation;
 /// Template variable definitions.
@@ -85,8 +89,14 @@ pub mod variables;
 // Re-exports.
 pub use error::{CoreError, CoreResult};
 pub use manifest::Manifest;
+pub use resolution::{
+    ResolvedVariables, VariableResolutionInput, VariableResolutionSource, resolve_variables,
+};
 pub use template::{SourceConfig, TemplateId, TemplateMetadata};
-pub use variables::{TransformKind, VariableSpec, VariableValue};
+pub use transform::apply_transform;
+pub use variables::{
+    TransformKind, VariableSpec, VariableValue, VariableValueMap, parse_variable_overrides,
+};
 
 // Tests.
 #[cfg(test)]

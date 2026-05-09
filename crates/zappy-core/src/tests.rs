@@ -360,3 +360,249 @@ transforms = ["raw", "wat_case"]
 
     assert!(matches!(err, crate::error::CoreError::ParseManifest { .. }));
 }
+
+#[test]
+fn applies_string_transforms() {
+    let value = VariableValue::String(String::from("my cool tool"));
+
+    assert_eq!(apply_transform(&value, TransformKind::Raw), "my cool tool");
+    assert_eq!(
+        apply_transform(&value, TransformKind::Kebab),
+        "my-cool-tool"
+    );
+    assert_eq!(
+        apply_transform(&value, TransformKind::Snake),
+        "my_cool_tool"
+    );
+    assert_eq!(apply_transform(&value, TransformKind::Pascal), "MyCoolTool");
+    assert_eq!(apply_transform(&value, TransformKind::Camel), "myCoolTool");
+    assert_eq!(
+        apply_transform(&value, TransformKind::ScreamingSnake),
+        "MY_COOL_TOOL",
+    );
+    assert_eq!(
+        apply_transform(&value, TransformKind::Upper),
+        "MY COOL TOOL"
+    );
+    assert_eq!(
+        apply_transform(&value, TransformKind::Lower),
+        "my cool tool"
+    );
+}
+
+const VARIABLE_MANIFEST: &str = r#"
+[template]
+id = "rust-cli"
+name = "Rust CLI"
+
+[variables.project_name]
+required = true
+default = "template-default"
+transforms = ["raw", "kebab", "snake", "pascal"]
+
+[variables.project_name.placeholders]
+raw = "__ZAPPY_PROJECT_NAME__"
+kebab = "__ZAPPY_PROJECT_NAME_KEBAB__"
+snake = "__ZAPPY_PROJECT_NAME_SNAKE__"
+pascal = "__ZAPPY_PROJECT_NAME_PASCAL__"
+
+[variables.license]
+default = "MIT"
+choices = ["MIT", "Apache-2.0"]
+
+[variables.use_ci]
+default = true
+"#;
+
+#[test]
+fn resolves_template_defaults() {
+    let manifest =
+        Manifest::from_toml_str(VARIABLE_MANIFEST, "zappy.toml").expect("manifest should parse");
+
+    let resolved = resolve_variables(&manifest.variables, &VariableResolutionInput::default())
+        .expect("variables should resolve");
+
+    assert_eq!(
+        resolved.values.get("project_name"),
+        Some(&VariableValue::String(String::from("template-default"))),
+    );
+    assert_eq!(
+        resolved.values.get("license"),
+        Some(&VariableValue::String(String::from("MIT"))),
+    );
+    assert_eq!(
+        resolved.values.get("use_ci"),
+        Some(&VariableValue::Bool(true))
+    );
+}
+
+#[test]
+fn explicit_values_override_template_defaults() {
+    let manifest =
+        Manifest::from_toml_str(VARIABLE_MANIFEST, "zappy.toml").expect("manifest should parse");
+
+    let mut explicit = VariableValueMap::new();
+    explicit.insert(
+        String::from("project_name"),
+        VariableValue::String(String::from("my cool tool")),
+    );
+
+    let resolved = resolve_variables(
+        &manifest.variables,
+        &VariableResolutionInput {
+            explicit,
+            ..VariableResolutionInput::default()
+        },
+    )
+    .expect("variables should resolve");
+
+    assert_eq!(
+        resolved.values.get("project_name"),
+        Some(&VariableValue::String(String::from("my cool tool"))),
+    );
+    assert_eq!(
+        resolved.replacements.get("__ZAPPY_PROJECT_NAME_KEBAB__"),
+        Some(&String::from("my-cool-tool")),
+    );
+    assert_eq!(
+        resolved.replacements.get("__ZAPPY_PROJECT_NAME_SNAKE__"),
+        Some(&String::from("my_cool_tool")),
+    );
+    assert_eq!(
+        resolved.replacements.get("__ZAPPY_PROJECT_NAME_PASCAL__"),
+        Some(&String::from("MyCoolTool")),
+    );
+}
+
+#[test]
+fn user_defaults_are_lower_priority_than_template_defaults() {
+    let manifest =
+        Manifest::from_toml_str(VARIABLE_MANIFEST, "zappy.toml").expect("manifest should parse");
+
+    let mut user_defaults = VariableValueMap::new();
+    user_defaults.insert(
+        String::from("license"),
+        VariableValue::String(String::from("Apache-2.0")),
+    );
+
+    let resolved = resolve_variables(
+        &manifest.variables,
+        &VariableResolutionInput {
+            user_defaults,
+            ..VariableResolutionInput::default()
+        },
+    )
+    .expect("variables should resolve");
+
+    assert_eq!(
+        resolved.values.get("license"),
+        Some(&VariableValue::String(String::from("MIT"))),
+    );
+}
+
+#[test]
+fn builtins_can_fill_declared_variables() {
+    let manifest = Manifest::from_toml_str(
+        r#"
+[template]
+id = "builtin-test"
+name = "Builtin Test"
+
+[variables.project_name]
+required = true
+prompt = "Project name"
+"#,
+        "zappy.toml",
+    )
+    .expect("manifest should parse");
+
+    let mut builtins = VariableValueMap::new();
+    builtins.insert(
+        String::from("project_name"),
+        VariableValue::String(String::from("builtin-project")),
+    );
+
+    let resolved = resolve_variables(
+        &manifest.variables,
+        &VariableResolutionInput {
+            builtins,
+            ..VariableResolutionInput::default()
+        },
+    )
+    .expect("variables should resolve");
+
+    assert_eq!(
+        resolved.values.get("project_name"),
+        Some(&VariableValue::String(String::from("builtin-project"))),
+    );
+}
+
+#[test]
+fn missing_required_variable_fails() {
+    let manifest = Manifest::from_toml_str(
+        r#"
+[template]
+id = "missing-test"
+name = "Missing Test"
+
+[variables.project_name]
+required = true
+prompt = "Project name"
+"#,
+        "zappy.toml",
+    )
+    .expect("manifest should parse");
+
+    let err = resolve_variables(&manifest.variables, &VariableResolutionInput::default())
+        .expect_err("missing required variable should fail");
+
+    assert!(err.to_string().contains("project_name"));
+}
+
+#[test]
+fn unknown_explicit_variable_fails() {
+    let manifest =
+        Manifest::from_toml_str(VARIABLE_MANIFEST, "zappy.toml").expect("manifest should parse");
+
+    let mut explicit = VariableValueMap::new();
+    explicit.insert(
+        String::from("unknown"),
+        VariableValue::String(String::from("value")),
+    );
+
+    let err = resolve_variables(
+        &manifest.variables,
+        &VariableResolutionInput {
+            explicit,
+            ..VariableResolutionInput::default()
+        },
+    )
+    .expect_err("unknown explicit variable should fail");
+
+    assert!(err.to_string().contains("unknown variable"));
+    assert!(err.to_string().contains("unknown"));
+}
+
+#[test]
+fn invalid_choice_fails() {
+    let manifest =
+        Manifest::from_toml_str(VARIABLE_MANIFEST, "zappy.toml").expect("manifest should parse");
+
+    let mut explicit = VariableValueMap::new();
+    explicit.insert(
+        String::from("license"),
+        VariableValue::String(String::from("GPL-3.0")),
+    );
+
+    let err = resolve_variables(
+        &manifest.variables,
+        &VariableResolutionInput {
+            explicit,
+            ..VariableResolutionInput::default()
+        },
+    )
+    .expect_err("invalid choice should fail");
+
+    assert!(err.to_string().contains("license"));
+    assert!(err.to_string().contains("GPL-3.0"));
+}
