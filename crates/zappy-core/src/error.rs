@@ -73,6 +73,13 @@ pub enum CoreError {
         /// Allowed choices.
         choices: String,
     },
+
+    /// Variable name reserved by a built-in variable.
+    #[error("[variable.{name}] is invalid because `{name}` is a reserved built-in variable")]
+    ReservedVariableName {
+        /// Variable name.
+        name: String,
+    },
 }
 
 impl CoreError {

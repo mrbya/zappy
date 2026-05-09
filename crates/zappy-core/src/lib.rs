@@ -67,6 +67,8 @@
     clippy::verbose_file_reads
 )]
 
+/// Builtin variables.
+pub mod builtins;
 /// Condition models.
 pub mod condition;
 /// Zappy core error types.

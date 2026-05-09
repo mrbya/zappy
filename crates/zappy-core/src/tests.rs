@@ -8,7 +8,7 @@ description = "Small Rust CLI application."
 language = "rust"
 version = "0.1.0"
 
-[variables.project_name]
+[variables.test_project_name]
 prompt = "Project name"
 default = "my-cli"
 required = true
@@ -26,7 +26,7 @@ fn parses_minimal_manifest() {
     assert_eq!(manifest.template.id.as_str(), "rust-cli");
     assert_eq!(manifest.template.name, "Rust CLI Application");
     assert_eq!(manifest.template.source.root.as_str(), "template");
-    assert!(manifest.variables.contains_key("project_name"));
+    assert!(manifest.variables.contains_key("test_project_name"));
     assert!(manifest.variables.contains_key("description"));
 }
 
@@ -167,7 +167,7 @@ fn rejects_validation_variable_not_declared_in_template_variables() {
 id = "rust-cli"
 name = "Rust CLI"
 
-[variables.project_name]
+[variables.test_project_name]
 default = "my-cli"
 
 [validation.variables]
@@ -208,10 +208,10 @@ fn rejects_empty_variable_placeholder() {
 id = "rust-cli"
 name = "Rust CLI"
 
-[variables.project_name]
+[variables.test_project_name]
 default = "my-cli"
 
-[variables.project_name.placeholders]
+[variables.test_project_name.placeholders]
 raw = ""
 "#;
 
@@ -229,7 +229,7 @@ fn rejects_empty_variable_prompt() {
 id = "rust-cli"
 name = "Rust CLI"
 
-[variables.project_name]
+[variables.test_project_name]
 prompt = ""
 default = "my-cli"
 "#;
@@ -285,32 +285,32 @@ fn parses_transform_placeholders() {
 id = "rust-cli"
 name = "Rust CLI"
 
-[variables.project_name]
+[variables.test_project_name]
 prompt = "Project name"
 default = "my-cli"
 transforms = ["raw", "kebab", "snake", "pascal", "camel", "screaming_snake", "upper", "lower"]
 
-[variables.project_name.placeholders]
-raw = "__ZAPPY_PROJECT_NAME__"
-kebab = "__ZAPPY_PROJECT_NAME_KEBAB__"
-snake = "__ZAPPY_PROJECT_NAME_SNAKE__"
-pascal = "__ZAPPY_PROJECT_NAME_PASCAL__"
-camel = "__ZAPPY_PROJECT_NAME_CAMEL__"
-screaming_snake = "__ZAPPY_PROJECT_NAME_SCREAMING_SNAKE__"
-upper = "__ZAPPY_PROJECT_NAME_UPPER__"
-lower = "__ZAPPY_PROJECT_NAME_LOWER__"
+[variables.test_project_name.placeholders]
+raw = "__ZAPPY_test_project_name__"
+kebab = "__ZAPPY_test_project_name_KEBAB__"
+snake = "__ZAPPY_test_project_name_SNAKE__"
+pascal = "__ZAPPY_test_project_name_PASCAL__"
+camel = "__ZAPPY_test_project_name_CAMEL__"
+screaming_snake = "__ZAPPY_test_project_name_SCREAMING_SNAKE__"
+upper = "__ZAPPY_test_project_name_UPPER__"
+lower = "__ZAPPY_test_project_name_LOWER__"
 "#;
 
     let manifest = Manifest::from_toml_str(source, "zappy.toml")
         .expect("manifest with transform placeholders should parse");
 
-    let project_name = manifest
+    let test_project_name = manifest
         .variables
-        .get("project_name")
-        .expect("project_name variable should exist");
+        .get("test_project_name")
+        .expect("test_project_name variable should exist");
 
     assert_eq!(
-        project_name.transforms.as_slice(),
+        test_project_name.transforms.as_slice(),
         &[
             crate::variables::TransformKind::Raw,
             crate::variables::TransformKind::Kebab,
@@ -324,22 +324,22 @@ lower = "__ZAPPY_PROJECT_NAME_LOWER__"
     );
 
     assert_eq!(
-        project_name
+        test_project_name
             .placeholders
             .get(&crate::variables::TransformKind::Raw),
-        Some(&"__ZAPPY_PROJECT_NAME__".to_owned()),
+        Some(&"__ZAPPY_test_project_name__".to_owned()),
     );
     assert_eq!(
-        project_name
+        test_project_name
             .placeholders
             .get(&crate::variables::TransformKind::Kebab),
-        Some(&"__ZAPPY_PROJECT_NAME_KEBAB__".to_owned()),
+        Some(&"__ZAPPY_test_project_name_KEBAB__".to_owned()),
     );
     assert_eq!(
-        project_name
+        test_project_name
             .placeholders
             .get(&crate::variables::TransformKind::ScreamingSnake),
-        Some(&"__ZAPPY_PROJECT_NAME_SCREAMING_SNAKE__".to_owned()),
+        Some(&"__ZAPPY_test_project_name_SCREAMING_SNAKE__".to_owned()),
     );
 }
 
@@ -350,7 +350,7 @@ fn rejects_invalid_transform_name() {
 id = "rust-cli"
 name = "Rust CLI"
 
-[variables.project_name]
+[variables.test_project_name]
 default = "my-cli"
 transforms = ["raw", "wat_case"]
 "#;
@@ -395,16 +395,16 @@ const VARIABLE_MANIFEST: &str = r#"
 id = "rust-cli"
 name = "Rust CLI"
 
-[variables.project_name]
+[variables.test_project_name]
 required = true
 default = "template-default"
 transforms = ["raw", "kebab", "snake", "pascal"]
 
-[variables.project_name.placeholders]
-raw = "__ZAPPY_PROJECT_NAME__"
-kebab = "__ZAPPY_PROJECT_NAME_KEBAB__"
-snake = "__ZAPPY_PROJECT_NAME_SNAKE__"
-pascal = "__ZAPPY_PROJECT_NAME_PASCAL__"
+[variables.test_project_name.placeholders]
+raw = "__ZAPPY_test_project_name__"
+kebab = "__ZAPPY_test_project_name_KEBAB__"
+snake = "__ZAPPY_test_project_name_SNAKE__"
+pascal = "__ZAPPY_test_project_name_PASCAL__"
 
 [variables.license]
 default = "MIT"
@@ -423,7 +423,7 @@ fn resolves_template_defaults() {
         .expect("variables should resolve");
 
     assert_eq!(
-        resolved.values.get("project_name"),
+        resolved.values.get("test_project_name"),
         Some(&VariableValue::String(String::from("template-default"))),
     );
     assert_eq!(
@@ -443,7 +443,7 @@ fn explicit_values_override_template_defaults() {
 
     let mut explicit = VariableValueMap::new();
     explicit.insert(
-        String::from("project_name"),
+        String::from("test_project_name"),
         VariableValue::String(String::from("my cool tool")),
     );
 
@@ -457,19 +457,25 @@ fn explicit_values_override_template_defaults() {
     .expect("variables should resolve");
 
     assert_eq!(
-        resolved.values.get("project_name"),
+        resolved.values.get("test_project_name"),
         Some(&VariableValue::String(String::from("my cool tool"))),
     );
     assert_eq!(
-        resolved.replacements.get("__ZAPPY_PROJECT_NAME_KEBAB__"),
+        resolved
+            .replacements
+            .get("__ZAPPY_test_project_name_KEBAB__"),
         Some(&String::from("my-cool-tool")),
     );
     assert_eq!(
-        resolved.replacements.get("__ZAPPY_PROJECT_NAME_SNAKE__"),
+        resolved
+            .replacements
+            .get("__ZAPPY_test_project_name_SNAKE__"),
         Some(&String::from("my_cool_tool")),
     );
     assert_eq!(
-        resolved.replacements.get("__ZAPPY_PROJECT_NAME_PASCAL__"),
+        resolved
+            .replacements
+            .get("__ZAPPY_test_project_name_PASCAL__"),
         Some(&String::from("MyCoolTool")),
     );
 }
@@ -508,7 +514,7 @@ fn builtins_can_fill_declared_variables() {
 id = "builtin-test"
 name = "Builtin Test"
 
-[variables.project_name]
+[variables.test_project_name]
 required = true
 prompt = "Project name"
 "#,
@@ -518,7 +524,7 @@ prompt = "Project name"
 
     let mut builtins = VariableValueMap::new();
     builtins.insert(
-        String::from("project_name"),
+        String::from("test_project_name"),
         VariableValue::String(String::from("builtin-project")),
     );
 
@@ -532,7 +538,7 @@ prompt = "Project name"
     .expect("variables should resolve");
 
     assert_eq!(
-        resolved.values.get("project_name"),
+        resolved.values.get("test_project_name"),
         Some(&VariableValue::String(String::from("builtin-project"))),
     );
 }
@@ -545,7 +551,7 @@ fn missing_required_variable_fails() {
 id = "missing-test"
 name = "Missing Test"
 
-[variables.project_name]
+[variables.test_project_name]
 required = true
 prompt = "Project name"
 "#,
@@ -556,7 +562,7 @@ prompt = "Project name"
     let err = resolve_variables(&manifest.variables, &VariableResolutionInput::default())
         .expect_err("missing required variable should fail");
 
-    assert!(err.to_string().contains("project_name"));
+    assert!(err.to_string().contains("test_project_name"));
 }
 
 #[test]

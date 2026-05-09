@@ -163,7 +163,7 @@ fn rejects_new_without_template() {
 }
 
 #[test]
-fn rejects_new_without_project_name() {
+fn rejects_new_without_test_project_name() {
     let result = Cli::try_parse_from(["zappy", "new", "--template", "rust-cli"]);
 
     assert!(result.is_err());
@@ -245,7 +245,7 @@ fn parses_create_command_from_existing_project() {
         "--description",
         "Rust CLI template",
         "--var",
-        "project_name=my-tool",
+        "test_project_name=my-tool",
         "--var",
         "license=MIT",
     ])
@@ -260,7 +260,10 @@ fn parses_create_command_from_existing_project() {
     assert_eq!(args.description.as_deref(), Some("Rust CLI template"));
     assert_eq!(
         args.vars,
-        ["project_name=my-tool".to_owned(), "license=MIT".to_owned(),],
+        [
+            "test_project_name=my-tool".to_owned(),
+            "license=MIT".to_owned(),
+        ],
     );
     assert!(!args.empty);
 }
@@ -323,11 +326,12 @@ fn command_args_are_cloneable() {
 
 #[test]
 fn parses_cli_variable_overrides() {
-    let overrides = parse_variable_overrides(["project_name=my-tool", "use_ci=true", "retries=3"])
-        .expect("overrides should parse");
+    let overrides =
+        parse_variable_overrides(["test_project_name=my-tool", "use_ci=true", "retries=3"])
+            .expect("overrides should parse");
 
     assert_eq!(
-        overrides.get("project_name"),
+        overrides.get("test_project_name"),
         Some(&VariableValue::String(String::from("my-tool"))),
     );
     assert_eq!(overrides.get("use_ci"), Some(&VariableValue::Bool(true)));
@@ -336,7 +340,7 @@ fn parses_cli_variable_overrides() {
 
 #[test]
 fn rejects_cli_variable_override_without_equals() {
-    let err = parse_variable_overrides(["project_name"])
+    let err = parse_variable_overrides(["test_project_name"])
         .expect_err("override without equals should fail");
 
     assert!(err.to_string().contains("key=value"));

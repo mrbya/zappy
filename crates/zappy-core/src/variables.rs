@@ -1,6 +1,7 @@
 use indexmap::IndexMap;
 use serde::Deserialize;
 
+use crate::builtins::is_builtin_name;
 use crate::error::{CoreError, CoreResult};
 use crate::template::validate_field;
 
@@ -275,6 +276,12 @@ pub(crate) fn validate_variable_name(name: &str) -> CoreResult<()> {
         return Err(CoreError::invalid_manifest(format!(
             "variable name `{name}` must not contain `-`, use `_` instead"
         )));
+    }
+
+    if is_builtin_name(name) {
+        return Err(CoreError::ReservedVariableName {
+            name: String::from(name),
+        });
     }
 
     Ok(())
