@@ -1,4 +1,6 @@
-/// Reserved variable names owned by Zappy.
+// TODO: Add built-in variable spec construction, resolution and injection.
+
+// Reserved variable names owned by Zappy.
 /// Project name variable name.
 pub const PROJECT_NAME: &str = "project_name";
 /// Project user variable name.
