@@ -20,6 +20,9 @@ pub struct VariableResolutionSource {
 /// Variable resolution input.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct VariableResolutionInput {
+    /// Built-in values supplied by zappy.
+    pub builtins: VariableValueMap,
+
     /// Highest-priority explicit values passed in via CLI `--var` args.
     pub explicit: VariableValueMap,
 
@@ -28,9 +31,6 @@ pub struct VariableResolutionInput {
 
     /// User-level defaults.
     pub user_defaults: VariableValueMap,
-
-    /// Built-in values supplied by zappy.
-    pub builtins: VariableValueMap,
 }
 
 /// Fully resolved variables prepared for rendering.
@@ -50,11 +50,11 @@ pub struct ResolvedVariables {
 ///
 /// Precedence:
 /// ```text
-/// explicit values
+/// built-ins
+/// > explicit values
 /// > interactive values
 /// > template defaults
 /// > user defaults
-/// > built-ins
 /// ```
 ///
 /// # Arguments
@@ -117,6 +117,10 @@ fn resolve_single_variable(
     spec: &VariableSpec,
     input: &VariableResolutionInput,
 ) -> CoreResult<Option<VariableValue>> {
+    if let Some(value) = input.builtins.get(name) {
+        return Ok(Some(value.clone()));
+    }
+
     if let Some(value) = input.explicit.get(name) {
         return Ok(Some(value.clone()));
     }
@@ -130,10 +134,6 @@ fn resolve_single_variable(
     }
 
     if let Some(value) = input.user_defaults.get(name) {
-        return Ok(Some(value.clone()));
-    }
-
-    if let Some(value) = input.builtins.get(name) {
         return Ok(Some(value.clone()));
     }
 
