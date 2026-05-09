@@ -1,5 +1,6 @@
 use std::process::ExitCode;
 
+use zappy_core::{VariableResolutionInput, VariableValueMap, resolve_variables};
 use zappy_fs::{DiscoveredTemplate, DiscoveryConfig, discover_templates};
 
 use crate::cli::{CreateArgs, InfoArgs, InitArgs, ListArgs, NewArgs, ValidateArgs};
@@ -60,9 +61,52 @@ pub fn info(args: &InfoArgs) -> ExitCode {
 
 /// New command stub.
 pub fn new(args: &NewArgs) -> ExitCode {
-    println!("zappy new: stub");
-    println!("{args:#?}");
-    ExitCode::SUCCESS
+    match zappy_core::parse_variable_overrides(args.vars.iter()) {
+        Ok(overrides) => {
+            println!("zappy new stub");
+            println!("template: {}", args.template);
+            println!("project: {}", args.project_name);
+
+            let config = DiscoveryConfig {
+                templates_dir: args.templates_dir.clone(),
+            };
+
+            let catalogue = match discover_templates(&config) {
+                Ok(catalogue) => catalogue,
+                Err(error) => {
+                    eprintln!("Error: {error}");
+                    return ExitCode::FAILURE;
+                }
+            };
+
+            let Some(template) = catalogue.find_by_id(&args.template) else {
+                eprintln!("Error: template `{}` was not found", args.template);
+                return ExitCode::FAILURE;
+            };
+
+            let input = VariableResolutionInput {
+                explicit: overrides,
+                interactive: VariableValueMap::new(),
+                user_defaults: VariableValueMap::new(),
+                builtins: VariableValueMap::new(),
+            };
+
+            let resolved = match resolve_variables(&template.manifest.variables, &input) {
+                Ok(resolved) => resolved,
+                Err(error) => {
+                    eprintln!("Error: {error}");
+                    return ExitCode::FAILURE;
+                }
+            };
+
+            println!("variables: {resolved:?}");
+            ExitCode::SUCCESS
+        }
+        Err(error) => {
+            eprintln!("error: {error}");
+            ExitCode::FAILURE
+        }
+    }
 }
 
 /// Validate command stub.
@@ -98,7 +142,7 @@ fn match_language_filter(template: &DiscoveredTemplate, language: Option<&str>) 
 /// Prints a compact template list.
 fn print_template_list(templates: &[&DiscoveredTemplate]) {
     println!("{:<24} {:<16} Name", "ID", "Language");
-    println!("{:-<24} {:-<16} {:-<1}", "", "", "");
+    println!("{:-<24} {:-<16} {:-<24}", "", "", "");
 
     for template in templates {
         let metadata = &template.manifest.template;

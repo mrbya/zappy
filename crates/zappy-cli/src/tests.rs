@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use clap::Parser;
+use zappy_core::{VariableValue, parse_variable_overrides};
 
 use crate::cli::{Cli, Command, CreateArgs, InfoArgs, InitArgs, ListArgs, NewArgs, ValidateArgs};
 
@@ -318,4 +319,51 @@ fn command_args_are_cloneable() {
     assert_clone::<ValidateArgs>();
     assert_clone::<InitArgs>();
     assert_clone::<CreateArgs>();
+}
+
+#[test]
+fn parses_cli_variable_overrides() {
+    let overrides = parse_variable_overrides(["project_name=my-tool", "use_ci=true", "retries=3"])
+        .expect("overrides should parse");
+
+    assert_eq!(
+        overrides.get("project_name"),
+        Some(&VariableValue::String(String::from("my-tool"))),
+    );
+    assert_eq!(overrides.get("use_ci"), Some(&VariableValue::Bool(true)));
+    assert_eq!(overrides.get("retries"), Some(&VariableValue::Integer(3)));
+}
+
+#[test]
+fn rejects_cli_variable_override_without_equals() {
+    let err = parse_variable_overrides(["project_name"])
+        .expect_err("override without equals should fail");
+
+    assert!(err.to_string().contains("key=value"));
+}
+
+#[test]
+fn rejects_cli_variable_override_with_empty_key() {
+    let err =
+        parse_variable_overrides(["=my-tool"]).expect_err("override with empty key should fail");
+
+    assert!(err.to_string().contains("key=value"));
+}
+
+#[test]
+fn new_rejects_invalid_variable_override() {
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args([
+            "new",
+            "--template",
+            "rust-cli",
+            "--name",
+            "my-tool",
+            "--var",
+            "bad",
+        ])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("key=value"));
 }
