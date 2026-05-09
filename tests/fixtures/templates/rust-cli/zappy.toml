@@ -7,3 +7,15 @@ version = "0.1.0"
 
 [template.source]
 root = "template"
+
+[variables]
+test_var = {
+    required = true,
+    default = "some default value",
+    transforms = ["raw", "snake", "camel"],
+    placeholders = {
+        raw = "__TEST_VARIABLE__",
+        snake = "__TEST_VARIABLE_SNAKE__",
+        camel = "__TEST_VARIABLE_CAMEL__",
+    }
+}
