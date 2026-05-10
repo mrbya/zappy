@@ -35,7 +35,7 @@ exclude = [".git", "dir2/exclude.md"]
 # Intentionaly leaving out `.stl` to get a warning.
 binary_extensions = ["png"]
 # Tests utf-8 file copy as a binary.
-binary_files = ["binary3.md"]
+binary_files = ["dir2/binary3.md"]
 
 # Conditional path test.
 [[conditionals]]

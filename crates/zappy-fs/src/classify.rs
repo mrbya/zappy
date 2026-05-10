@@ -32,7 +32,11 @@ fn matches_binary_file(path: &Path, binary_files: &[String]) -> bool {
         return false;
     };
 
-    binary_files.iter().any(|entry| entry == file_name)
+    binary_files.iter().any(|entry| {
+        let entry = entry.trim();
+
+        entry == file_name || path.ends_with(entry)
+    })
 }
 
 /// Returns true if a path extension matches manifest binary extensions.
