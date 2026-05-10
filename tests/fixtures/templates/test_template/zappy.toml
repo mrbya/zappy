@@ -1,0 +1,43 @@
+[template]
+id = "test-template"
+name = "Test template"
+description = "Test template fixture for Zappy"
+language = "other"
+version = "1.2.3"
+
+[template.source]
+root = "template"
+
+# Tests all variable transforms.
+[variables]
+test_var = {
+    required = true,
+    prompt = "Test variable",
+    transforms = ["raw", "kebab", "snake", "pascal", "camel", "screaming_snake", "upper", "lower"],
+    placeholders = {
+        raw             = "__TEST_VAR__",
+        kebab           = "__TEST_VAR_KEBAB__",
+        snake           = "__TEST_VAR_SNAKE__",
+        pascal          = "__TEST_VAR_PASCAL__",
+        camel           = "__TEST_VAR_CAMEL__",
+        screaming_snake = "__TEST_VAR_SCREAMING__",
+        upper           = "__TEST_VAR_UPPER__",
+        lower           = "__TEST_VAR_LOWER__",
+    }
+}
+
+include_optional = {
+    default = false
+}
+
+[paths]
+exclude = [".git", "dir2/exclude.md"]
+# Intentionaly leaving out `.stl` to get a warning.
+binary_extensions = ["png"]
+# Tests utf-8 file copy as a binary.
+binary_files = ["binary3.md"]
+
+# Conditional path test.
+[[conditionals]]
+path = "optional.md"
+when = "include_optional"

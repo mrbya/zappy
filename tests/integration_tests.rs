@@ -113,3 +113,68 @@ fn info_fails_for_missing_template() {
         .failure()
         .stderr(predicate::str::contains("template `missing` was not found"));
 }
+
+#[test]
+fn new_dry_run_prints_generation_plan() {
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args([
+            "new",
+            "--template",
+            "test-template",
+            "--name",
+            "my-tool",
+            "--templates-dir",
+            "tests/fixtures/templates",
+        ])
+        .arg("--var")
+        .arg("test_var=my cool tool")
+        .arg("--dry-run")
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("Dry-run generation plan"))
+        .stdout(predicates::str::contains("RENDER"))
+        .stdout(predicates::str::contains("WARN"))
+        .stdout(predicates::str::contains("SKIP"))
+        .stdout(predicates::str::contains("[Symlink]"))
+        .stdout(predicates::str::contains("[ConditionalFalse"))
+        .stdout(predicates::str::contains("myCoolTool.md"))
+        .stdout(predicates::str::contains("my-cool-tool.md"))
+        .stdout(predicates::str::contains("my cool tool.md"))
+        .stdout(predicates::str::contains("MyCoolTool.md"))
+        .stdout(predicates::str::contains("MY_COOL_TOOL.md"))
+        .stdout(predicates::str::contains("my_cool_tool.md"))
+        .stdout(predicates::str::contains("CREATE DIR"));
+
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args([
+            "new",
+            "--template",
+            "test-template",
+            "--name",
+            "my-tool",
+            "--templates-dir",
+            "tests/fixtures/templates",
+        ])
+        .arg("--var")
+        .arg("test_var=my cool tool")
+        .arg("--var")
+        .arg("include_optional=yes")
+        .arg("--dry-run")
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("Dry-run generation plan"))
+        .stdout(predicates::str::contains("RENDER"))
+        .stdout(predicates::str::contains("WARN"))
+        .stdout(predicates::str::contains("SKIP"))
+        .stdout(predicates::str::contains("[Symlink]"))
+        .stdout(predicates::str::contains("my-tool/optional.md"))
+        .stdout(predicates::str::contains("myCoolTool.md"))
+        .stdout(predicates::str::contains("my-cool-tool.md"))
+        .stdout(predicates::str::contains("my cool tool.md"))
+        .stdout(predicates::str::contains("MyCoolTool.md"))
+        .stdout(predicates::str::contains("MY_COOL_TOOL.md"))
+        .stdout(predicates::str::contains("my_cool_tool.md"))
+        .stdout(predicates::str::contains("CREATE DIR"));
+}

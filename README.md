@@ -27,6 +27,7 @@
   * [Style](#style)
 - [Similar projects](#similar-projects)
 - [License](#license)
+- [Repository maturity note](#repository-maturity-note)
 
 <!-- tocstop -->
 
