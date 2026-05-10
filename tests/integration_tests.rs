@@ -180,3 +180,78 @@ fn new_dry_run_prints_generation_plan() {
         .stdout(predicates::str::contains("my_cool_tool.md"))
         .stdout(predicates::str::contains("CREATE DIR"));
 }
+
+#[test]
+fn new_generates_project_files() {
+    let output = TempDir::new().expect("output tempdir should be created");
+    let project_dir = output.path().join("my-tool");
+
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args([
+            "new",
+            "--template",
+            "test-template",
+            "--templates-dir",
+            "tests/fixtures/templates",
+            "--name",
+            "my-tool",
+            "--var",
+            "test_var=my cool tool",
+            "--output",
+        ])
+        .arg(&project_dir)
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("Generated `test-template`"));
+
+    let readme =
+        fs::read_to_string(project_dir.join("README.md")).expect("README should be generated");
+
+    assert!(
+        readme.contains("my cool tool"),
+        "README should contain rendered variable value",
+    );
+
+    assert!(
+        project_dir.join("dir4/my_cool_tool.md").exists(),
+        "rendered snake-case path should exist",
+    );
+
+    assert!(
+        !project_dir.join("optional.md").exists(),
+        "conditional file should be skipped by default",
+    );
+}
+
+#[test]
+fn new_dry_run_does_not_write_files() {
+    let _ = TempDir::new().expect("output tempdir should be created");
+    let output = TempDir::new().expect("output tempdir should be created");
+    let project_dir = output.path().join("my-tool");
+
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args([
+            "new",
+            "--template",
+            "test-template",
+            "--templates-dir",
+            "tests/fixtures/templates",
+            "--name",
+            "my-tool",
+            "--var",
+            "test_var=my cool tool",
+            "--output",
+        ])
+        .arg(&project_dir)
+        .arg("--dry-run")
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("Dry-run generation plan"));
+
+    assert!(
+        !project_dir.exists(),
+        "dry-run must not create the output directory",
+    );
+}
