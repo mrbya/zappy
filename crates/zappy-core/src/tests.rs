@@ -612,3 +612,35 @@ fn invalid_choice_fails() {
     assert!(err.to_string().contains("license"));
     assert!(err.to_string().contains("GPL-3.0"));
 }
+
+#[test]
+fn renders_text_placeholders() {
+    let mut replacements = indexmap::IndexMap::new();
+    replacements.insert(String::from("__NAME__"), String::from("my-tool"));
+
+    let rendered = crate::render::render_text("project = \"__NAME__\"", &replacements);
+
+    assert_eq!(rendered, "project = \"my-tool\"");
+}
+
+#[test]
+fn renders_relative_path_placeholders() {
+    let mut replacements = indexmap::IndexMap::new();
+    replacements.insert(String::from("__NAME__"), String::from("my_tool"));
+
+    let rendered = crate::render::render_relative_path("src/__NAME__.rs", &replacements)
+        .expect("path should render");
+
+    assert_eq!(rendered, "src/my_tool.rs");
+}
+
+#[test]
+fn rejects_rendered_parent_component_path() {
+    let mut replacements = indexmap::IndexMap::new();
+    replacements.insert(String::from("__BAD__"), String::from(".."));
+
+    let err = crate::render::render_relative_path("src/__BAD__/main.rs", &replacements)
+        .expect_err("parent component should fail");
+
+    assert!(err.to_string().contains(".."));
+}

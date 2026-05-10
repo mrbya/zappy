@@ -3,6 +3,7 @@ use serde::Deserialize;
 
 use crate::error::{CoreError, CoreResult};
 use crate::template::validate_path;
+use crate::{VariableValue, VariableValueMap};
 
 /// A path included only when a variable condition evaluates to true.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -39,4 +40,12 @@ impl TryFrom<RawConditionalPath> for ConditionalPath {
             when: raw.when,
         })
     }
+}
+
+/// Evaluates a boolean condition variable.
+///
+/// Missing or non-boolean values evaluate to false for now.
+#[must_use]
+pub fn evaluate_condition(variable_name: &str, values: &VariableValueMap) -> bool {
+    matches!(values.get(variable_name), Some(VariableValue::Bool(true)))
 }

@@ -62,7 +62,7 @@ pub enum CoreError {
     },
 
     /// Variable value is not one of the manifest-defined choices.
-    #[error("invalid value `{value}` for variable `{name}, expected one of: {choices}`")]
+    #[error("invalid value `{value}` for variable `{name}`, expected one of: [{choices}]")]
     InvalidVariableChoice {
         /// Variable name.
         name: String,
@@ -79,6 +79,16 @@ pub enum CoreError {
     ReservedVariableName {
         /// Variable name.
         name: String,
+    },
+
+    /// Rendered path is invalid.
+    #[error("invalid rendered path `{path}`: {reason}")]
+    InvalidRenderedPath {
+        /// Rendered path.
+        path: String,
+
+        /// Validation failure reason.
+        reason: String,
     },
 }
 

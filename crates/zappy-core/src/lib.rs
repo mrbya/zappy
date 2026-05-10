@@ -77,6 +77,10 @@ pub mod error;
 pub mod hooks;
 /// Template manifest parsing.
 pub mod manifest;
+/// Generation plan model.
+pub mod plan;
+/// Placeholder replacement in strings/paths.
+pub mod render;
 /// Variable resolution.
 pub mod resolution;
 /// Template metadata parsing.
@@ -91,6 +95,7 @@ pub mod variables;
 // Re-exports.
 pub use error::{CoreError, CoreResult};
 pub use manifest::Manifest;
+pub use plan::{GenerationPlan, PlanOperation, PlanWarning, SkipReason};
 pub use resolution::{
     ResolvedVariables, VariableResolutionInput, VariableResolutionSource, resolve_variables,
 };
