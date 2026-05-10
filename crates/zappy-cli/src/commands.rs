@@ -59,11 +59,11 @@ pub fn info(args: &InfoArgs) -> ExitCode {
     ExitCode::SUCCESS
 }
 
-/// New command stub.
+/// Zappy command: new.
 pub fn new(args: &NewArgs) -> ExitCode {
     match zappy_core::parse_variable_overrides(args.vars.iter()) {
         Ok(overrides) => {
-            println!("zappy new stub");
+            println!("Zappy new command:");
             println!("template: {}", args.template);
             println!("project: {}", args.project_name);
 
@@ -99,34 +99,60 @@ pub fn new(args: &NewArgs) -> ExitCode {
                 }
             };
 
+            let output_dir = args
+                .output
+                .clone()
+                .unwrap_or_else(|| std::path::PathBuf::from(&args.project_name));
+
+            let plan_input = zappy_fs::BuildPlanInput {
+                template_dir: &template.template_dir,
+                manifest: &template.manifest,
+                variables: &resolved,
+                output_dir,
+                force: args.force,
+            };
+
+            let plan = match zappy_fs::build_generation_plan(&plan_input) {
+                Ok(plan) => plan,
+                Err(error) => {
+                    eprintln!("Error: {error}");
+                    return ExitCode::FAILURE;
+                }
+            };
+
             if args.dry_run {
-                let output_dir = args
-                    .output
-                    .clone()
-                    .unwrap_or_else(|| std::path::PathBuf::from(&args.project_name));
-
-                let plan_input = zappy_fs::BuildPlanInput {
-                    template_dir: &template.template_dir,
-                    manifest: &template.manifest,
-                    variables: &resolved,
-                    output_dir,
-                    force: args.force,
-                };
-
-                let plan = match zappy_fs::build_generation_plan(&plan_input) {
-                    Ok(plan) => plan,
-                    Err(error) => {
-                        eprintln!("Error: {error}");
-                        return ExitCode::FAILURE;
-                    }
-                };
-
                 println!();
                 print_generation_plan(&plan);
                 return ExitCode::SUCCESS;
             }
 
-            println!("zappy new: generation not implemented yet; use --dry-run to preview");
+            let options = if args.force {
+                zappy_fs::MaterializationOptions::force()
+            } else {
+                zappy_fs::MaterializationOptions::no_force()
+            };
+
+            let summary = match zappy_fs::materialize_generation_plan(&plan, options) {
+                Ok(summary) => summary,
+                Err(error) => {
+                    eprint!("Error: {error}");
+                    return ExitCode::FAILURE;
+                }
+            };
+
+            println!(
+                "Generated `{}` in {}",
+                args.template,
+                plan.output_dir.display()
+            );
+            println!(
+                "Created {} directories, wrote {} text files, copied {} binary files, skipped {} \
+                 paths.",
+                summary.directories_created,
+                summary.text_files_written,
+                summary.binary_files_copied,
+                summary.skipped,
+            );
             ExitCode::SUCCESS
         }
         Err(error) => {
