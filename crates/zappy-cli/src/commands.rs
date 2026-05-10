@@ -99,7 +99,34 @@ pub fn new(args: &NewArgs) -> ExitCode {
                 }
             };
 
-            println!("variables: {resolved:?}");
+            if args.dry_run {
+                let output_dir = args
+                    .output
+                    .clone()
+                    .unwrap_or_else(|| std::path::PathBuf::from(&args.project_name));
+
+                let plan_input = zappy_fs::BuildPlanInput {
+                    template_dir: &template.template_dir,
+                    manifest: &template.manifest,
+                    variables: &resolved,
+                    output_dir,
+                    force: args.force,
+                };
+
+                let plan = match zappy_fs::build_generation_plan(&plan_input) {
+                    Ok(plan) => plan,
+                    Err(error) => {
+                        eprintln!("Error: {error}");
+                        return ExitCode::FAILURE;
+                    }
+                };
+
+                println!();
+                print_generation_plan(&plan);
+                return ExitCode::SUCCESS;
+            }
+
+            println!("zappy new: generation not implemented yet; use --dry-run to preview");
             ExitCode::SUCCESS
         }
         Err(error) => {
@@ -182,4 +209,66 @@ fn print_template_info(template: &DiscoveredTemplate) {
     println!("Source root: {}", metadata.source.root);
     println!("Template dir: {}", template.template_dir.display());
     println!("Manifest:    {}", template.manifest_path.display());
+}
+
+/// Prints generation plan for the `new` command dry-run.
+fn print_generation_plan(plan: &zappy_core::GenerationPlan) {
+    println!(
+        "Dry-run generation plan for `{}`",
+        plan.template_id.as_str(),
+    );
+    println!("Output: {}", plan.output_dir.display());
+
+    if !plan.warnings.is_empty() {
+        println!();
+        println!("Warnings:");
+
+        for warning in plan.warnings.iter().cloned() {
+            match warning {
+                zappy_core::PlanWarning::DestinationExists { destination } => {
+                    println!("WARN         {} already exists", destination.display());
+                }
+                zappy_core::PlanWarning::NonUtf8FileCopiedAsBinary { source } => {
+                    println!(
+                        "WARN         {} is not UTF-8; copying as binary",
+                        source.display()
+                    );
+                }
+            }
+        }
+    }
+
+    println!();
+
+    for operation in plan.operations.clone() {
+        match operation {
+            zappy_core::PlanOperation::CreateDirectory { destination, .. } => {
+                println!("CREATE DIR   {}", destination.display());
+            }
+            zappy_core::PlanOperation::RenderTextFile {
+                source,
+                destination,
+                ..
+            } => {
+                println!(
+                    "RENDER       {} -> {}",
+                    source.display(),
+                    destination.display()
+                );
+            }
+            zappy_core::PlanOperation::CopyBinaryFile {
+                source,
+                destination,
+            } => {
+                println!(
+                    "COPY         {} -> {}",
+                    source.display(),
+                    destination.display()
+                );
+            }
+            zappy_core::PlanOperation::Skip { source, reason } => {
+                println!("SKIP         {} [{reason:?}]", source.display());
+            }
+        }
+    }
 }
