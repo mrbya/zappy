@@ -69,4 +69,23 @@ pub enum FsError {
         #[source]
         source: zappy_core::CoreError,
     },
+
+    /// Failed to render a template file path.
+    #[error("failed to render template path")]
+    RenderPath {
+        /// Underlying core error.
+        #[source]
+        source: zappy_core::CoreError,
+    },
+
+    /// Failed to read template file.
+    #[error("failed to read template file `{path}`")]
+    ReadTemplateFile {
+        /// Template file path.
+        path: PathBuf,
+
+        /// Underlying IO error.
+        #[source]
+        source: std::io::Error,
+    },
 }

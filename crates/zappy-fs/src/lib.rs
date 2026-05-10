@@ -66,18 +66,25 @@
     clippy::verbose_file_reads
 )]
 
+/// Text/binary classification.
+pub mod classify;
 /// Template discovery.
 pub mod discover;
-
 /// Filesystem error types.
 pub mod error;
+/// Generation plan build.
+pub mod plan;
+/// Deterministic source traversal.
+pub mod walk;
 
 // Re-exports.
+pub use classify::{FileKind, classify_file_by_path};
 pub use discover::{
     DiscoveredTemplate, DiscoveryConfig, TemplateCatalogue, TemplateSearchPath,
     TemplateSearchPathKind, discover_templates, resolve_template_search_paths,
 };
 pub use error::{FsError, FsResult};
+pub use plan::{BuildPlanInput, build_generation_plan};
 
 // Tests.
 #[allow(clippy::panic)]
