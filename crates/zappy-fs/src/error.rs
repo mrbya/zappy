@@ -88,4 +88,58 @@ pub enum FsError {
         #[source]
         source: std::io::Error,
     },
+
+    /// Destination already exists and --force was not enabled.
+    #[error("destination `{path}` already exists")]
+    DestinationExists {
+        /// Existing destination path.
+        path: PathBuf,
+    },
+
+    /// Dailed to create a directory.
+    #[error("failed to create directory `{path}`")]
+    CreateDirectory {
+        /// Directory path.
+        path: PathBuf,
+
+        /// Underlying IO error.
+        #[source]
+        source: std::io::Error,
+    },
+
+    /// Failed to write a rendered text file.
+    #[error("failed to write text file `{path}`")]
+    WriteTextFile {
+        /// Destination file path.
+        path: PathBuf,
+
+        /// Underlying IO error.
+        #[source]
+        source: std::io::Error,
+    },
+
+    /// Failed to copy a binary file.
+    #[error("failed to copy binary files `{source}` to `{destination}`")]
+    CopyBinaryFile {
+        /// Source file path.
+        source_path: PathBuf,
+
+        /// Destination file path.
+        destination: PathBuf,
+
+        /// Underlying IO error.
+        #[source]
+        source: std::io::Error,
+    },
+
+    /// Failed to create a parent directory for a destination file.
+    #[error("failed to create parent directory `{path}`")]
+    CreateParentDirectory {
+        /// Parent directory path.
+        path: PathBuf,
+
+        /// Underlying IO error.
+        #[source]
+        source: std::io::Error,
+    },
 }

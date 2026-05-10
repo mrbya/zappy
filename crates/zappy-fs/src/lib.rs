@@ -55,7 +55,6 @@
     clippy::rest_pat_in_fully_bound_structs,
     clippy::same_name_method,
     clippy::self_named_module_files,
-    clippy::separated_literal_suffix,
     clippy::shadow_unrelated,
     clippy::str_to_string,
     clippy::string_add,
@@ -72,6 +71,8 @@ pub mod classify;
 pub mod discover;
 /// Filesystem error types.
 pub mod error;
+/// Generation plan materialization.
+pub mod materialize;
 /// Generation plan build.
 pub mod plan;
 /// Deterministic source traversal.
@@ -84,6 +85,9 @@ pub use discover::{
     TemplateSearchPathKind, discover_templates, resolve_template_search_paths,
 };
 pub use error::{FsError, FsResult};
+pub use materialize::{
+    MaterializationOptions, MaterializationSummary, materialize_generation_plan,
+};
 pub use plan::{BuildPlanInput, build_generation_plan};
 
 // Tests.
