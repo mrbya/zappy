@@ -181,9 +181,16 @@ fn plan_text_or_binary_file(
 
 /// Returns true if relative path matches excludes.
 fn is_excluded(relative_path: &Path, excludes: &[String]) -> bool {
-    relative_path.components().any(|component| {
-        let component = component.as_os_str().to_string_lossy();
-        excludes.iter().any(|exclude| exclude == &component)
+    let relative_path = path_to_posix_string(relative_path);
+
+    excludes.iter().any(|exclude| {
+        let exclude = exclude.trim();
+
+        exclude == relative_path
+            || relative_path.starts_with(&format!("{exclude}/"))
+            || relative_path
+                .split('/')
+                .any(|component| component == exclude)
     })
 }
 
