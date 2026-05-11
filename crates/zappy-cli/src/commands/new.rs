@@ -75,7 +75,7 @@ pub fn new(args: &NewArgs) -> ExitCode {
             run_generation(args, template, &resolved, &plan)
         }
         Err(error) => {
-            eprintln!("error: {error}");
+            eprintln!("Error: {error}");
             ExitCode::FAILURE
         }
     }
@@ -165,7 +165,7 @@ fn run_generation_hooks(
     let summary = match zappy_hooks::execute_hooks(&input) {
         Ok(summary) => summary,
         Err(error) => {
-            eprint!("Error {error}");
+            eprint!("Error: {error}");
             return false;
         }
     };
