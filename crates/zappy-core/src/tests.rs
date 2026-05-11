@@ -507,43 +507,6 @@ fn user_defaults_are_lower_priority_than_template_defaults() {
 }
 
 #[test]
-fn builtins_can_fill_declared_variables() {
-    let manifest = Manifest::from_toml_str(
-        r#"
-[template]
-id = "builtin-test"
-name = "Builtin Test"
-
-[variables.test_project_name]
-required = true
-prompt = "Project name"
-"#,
-        "zappy.toml",
-    )
-    .expect("manifest should parse");
-
-    let mut builtins = VariableValueMap::new();
-    builtins.insert(
-        String::from("test_project_name"),
-        VariableValue::String(String::from("builtin-project")),
-    );
-
-    let resolved = resolve_variables(
-        &manifest.variables,
-        &VariableResolutionInput {
-            builtins,
-            ..VariableResolutionInput::default()
-        },
-    )
-    .expect("variables should resolve");
-
-    assert_eq!(
-        resolved.values.get("test_project_name"),
-        Some(&VariableValue::String(String::from("builtin-project"))),
-    );
-}
-
-#[test]
 fn missing_required_variable_fails() {
     let manifest = Manifest::from_toml_str(
         r#"

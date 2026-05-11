@@ -68,6 +68,7 @@ pub fn resolve_variables(
     variables: &VariableMap,
     input: &VariableResolutionInput,
 ) -> CoreResult<ResolvedVariables> {
+    validate_builtin_variables(&input.builtins)?;
     validate_known_variables(variables, "explicit values", &input.explicit)?;
     validate_known_variables(variables, "interactive values", &input.interactive)?;
     validate_known_variables(variables, "user defaults", &input.user_defaults)?;
@@ -103,6 +104,13 @@ pub fn resolve_variables(
         resolved_values.insert(name.clone(), value);
         transformed_values.insert(name.clone(), transformed_for_variable);
     }
+
+    inject_builtins(
+        &input.builtins,
+        &mut resolved_values,
+        &mut transformed_values,
+        &mut replacements,
+    );
 
     Ok(ResolvedVariables {
         values: resolved_values,
@@ -144,6 +152,40 @@ fn resolve_single_variable(
     }
 
     Ok(None)
+}
+
+/// Validates builtin variables.
+fn validate_builtin_variables(values: &VariableValueMap) -> CoreResult<()> {
+    for name in values.keys() {
+        if !crate::builtins::is_builtin_name(name) {
+            return Err(CoreError::UnknownBuiltinVariable { name: name.clone() });
+        }
+    }
+
+    Ok(())
+}
+
+/// Injects built-in variables into a variable value map.
+fn inject_builtins(
+    builtins: &VariableValueMap,
+    values: &mut VariableValueMap,
+    transformations: &mut IndexMap<String, IndexMap<TransformKind, String>>,
+    replacements: &mut IndexMap<String, String>,
+) {
+    let builtin_transformations = crate::builtins::builtin_transformations(builtins);
+    let builtin_replacements = crate::builtins::builtin_replacements(builtins);
+
+    for (name, value) in builtins {
+        values.insert(name.clone(), value.clone());
+    }
+
+    for (name, transformed) in builtin_transformations {
+        transformations.insert(name, transformed);
+    }
+
+    for (placeholder, value) in builtin_replacements {
+        replacements.insert(placeholder, value);
+    }
 }
 
 /// Validates that every source key references a variable declared in tempalte manifest.

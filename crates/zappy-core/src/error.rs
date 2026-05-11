@@ -90,6 +90,13 @@ pub enum CoreError {
         /// Validation failure reason.
         reason: String,
     },
+
+    /// Unknown built-in variable was provided by the caller.
+    #[error("unknown built-in variable `{name}`")]
+    UnknownBuiltinVariable {
+        /// Built-in variable name.
+        name: String,
+    },
 }
 
 impl CoreError {
