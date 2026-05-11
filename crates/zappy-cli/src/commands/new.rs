@@ -54,7 +54,7 @@ pub fn new(args: &NewArgs) -> ExitCode {
                 template_dir: &template.template_dir,
                 manifest: &template.manifest,
                 variables: &resolved,
-                output_dir: output_dir.clone(),
+                output_dir,
                 force: args.force,
             };
 
@@ -72,84 +72,106 @@ pub fn new(args: &NewArgs) -> ExitCode {
                 return ExitCode::SUCCESS;
             }
 
-            if let Err(error) = create_directory(&output_dir) {
-                eprintln!("Error: {error}");
-                return ExitCode::FAILURE;
-            }
-
-            if !args.no_hooks {
-                let pre_input = zappy_hooks::ExecuteHooksInput {
-                    phase: zappy_hooks::HookPhase::PreGenerate,
-                    hooks: &template.manifest.hooks.pre_generate,
-                    output_dir: &plan.output_dir,
-                    variables: &resolved,
-                };
-
-                let pre_summary = match zappy_hooks::execute_hooks(&pre_input) {
-                    Ok(pre_summary) => pre_summary,
-                    Err(error) => {
-                        eprint!("Error {error}");
-                        return ExitCode::FAILURE;
-                    }
-                };
-
-                print_hook_summary("pre-generate", &pre_summary);
-            }
-
-            let options = if args.force {
-                zappy_fs::MaterializationOptions::force()
-            } else {
-                zappy_fs::MaterializationOptions::no_force()
-            };
-
-            let summary = match zappy_fs::materialize_generation_plan(&plan, options) {
-                Ok(summary) => summary,
-                Err(error) => {
-                    eprint!("Error: {error}");
-                    return ExitCode::FAILURE;
-                }
-            };
-
-            println!(
-                "Generated `{}` in {}",
-                args.template,
-                plan.output_dir.display()
-            );
-            println!(
-                "Created {} directories, wrote {} text files, copied {} binary files, skipped {} \
-                 paths.",
-                summary.directories_created,
-                summary.text_files_written,
-                summary.binary_files_copied,
-                summary.skipped,
-            );
-
-            if !args.no_hooks {
-                let post_input = zappy_hooks::ExecuteHooksInput {
-                    phase: zappy_hooks::HookPhase::PostGenerate,
-                    hooks: &template.manifest.hooks.post_generate,
-                    output_dir: &plan.output_dir,
-                    variables: &resolved,
-                };
-
-                let post_summary = match zappy_hooks::execute_hooks(&post_input) {
-                    Ok(post_summary) => post_summary,
-                    Err(error) => {
-                        eprint!("Error {error}");
-                        return ExitCode::FAILURE;
-                    }
-                };
-
-                print_hook_summary("post-generate", &post_summary);
-            }
-
-            ExitCode::SUCCESS
+            run_generation(args, template, &resolved, &plan)
         }
         Err(error) => {
             eprintln!("error: {error}");
             ExitCode::FAILURE
         }
     }
+}
+
+/// Runs the filesystem and hook execution path for `zappy new`.
+fn run_generation(
+    args: &NewArgs,
+    template: &zappy_fs::DiscoveredTemplate,
+    resolved: &zappy_core::ResolvedVariables,
+    plan: &zappy_core::GenerationPlan,
+) -> ExitCode {
+    if let Err(error) = create_directory(&plan.output_dir) {
+        eprintln!("Error: {error}");
+        return ExitCode::FAILURE;
+    }
+
+    if !args.no_hooks
+        && !run_generation_hooks(
+            "pre-generate",
+            zappy_hooks::HookPhase::PreGenerate,
+            &template.manifest.hooks.pre_generate,
+            &plan.output_dir,
+            resolved,
+        )
+    {
+        return ExitCode::FAILURE;
+    }
+
+    let options = if args.force {
+        zappy_fs::MaterializationOptions::force()
+    } else {
+        zappy_fs::MaterializationOptions::no_force()
+    };
+
+    let summary = match zappy_fs::materialize_generation_plan(plan, options) {
+        Ok(summary) => summary,
+        Err(error) => {
+            eprint!("Error: {error}");
+            return ExitCode::FAILURE;
+        }
+    };
+
+    println!(
+        "Generated `{}` in {}",
+        args.template,
+        plan.output_dir.display()
+    );
+    println!(
+        "Created {} directories, wrote {} text files, copied {} binary files, skipped {} paths.",
+        summary.directories_created,
+        summary.text_files_written,
+        summary.binary_files_copied,
+        summary.skipped,
+    );
+
+    if !args.no_hooks
+        && !run_generation_hooks(
+            "post-generate",
+            zappy_hooks::HookPhase::PostGenerate,
+            &template.manifest.hooks.post_generate,
+            &plan.output_dir,
+            resolved,
+        )
+    {
+        return ExitCode::FAILURE;
+    }
+
+    ExitCode::SUCCESS
+}
+
+/// Executes generation hooks for one phase and prints the phase summary.
+fn run_generation_hooks(
+    phase_name: &str,
+    phase: zappy_hooks::HookPhase,
+    hooks: &[zappy_core::hooks::HookSpec],
+    output_dir: &std::path::Path,
+    resolved: &zappy_core::ResolvedVariables,
+) -> bool {
+    let input = zappy_hooks::ExecuteHooksInput {
+        phase,
+        hooks,
+        output_dir,
+        variables: resolved,
+    };
+
+    let summary = match zappy_hooks::execute_hooks(&input) {
+        Ok(summary) => summary,
+        Err(error) => {
+            eprint!("Error {error}");
+            return false;
+        }
+    };
+
+    print_hook_summary(phase_name, &summary);
+    true
 }
 
 /// Prints generation plan for the `new` command dry-run.
