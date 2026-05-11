@@ -607,3 +607,73 @@ fn rejects_rendered_parent_component_path() {
 
     assert!(err.to_string().contains(".."));
 }
+
+#[test]
+fn rejects_template_variable_with_builtin_name() {
+    let source = r#"
+[template]
+id = "builtin-test"
+name = "Builtin Test"
+
+[variables.project_name]
+default = "bad"
+"#;
+
+    let err = Manifest::from_toml_str(source, "zappy.toml")
+        .expect_err("builtin variable names should be reserved");
+
+    assert!(err.to_string().contains("reserved built-in variable"));
+}
+
+#[test]
+fn rejects_cli_override_for_builtin_variable() {
+    let err = parse_variable_overrides(["project_name=bad"])
+        .expect_err("builtin variable override should fail");
+
+    assert!(err.to_string().contains("reserved built-in variable"));
+}
+
+#[test]
+fn resolves_builtin_project_name_without_manifest_variable() {
+    let manifest = Manifest::from_toml_str(
+        r#"
+[template]
+id = "builtin-test"
+name = "Builtin Test"
+"#,
+        "zappy.toml",
+    )
+    .expect("manifest should parse");
+
+    let mut builtins = VariableValueMap::new();
+    builtins.insert(
+        String::from(crate::builtins::PROJECT_NAME),
+        VariableValue::String(String::from("my cool tool")),
+    );
+
+    let resolved = resolve_variables(
+        &manifest.variables,
+        &VariableResolutionInput {
+            builtins,
+            ..VariableResolutionInput::default()
+        },
+    )
+    .expect("variables should resolve");
+
+    assert_eq!(
+        resolved.replacements.get("__ZAPPY_PROJECT_NAME__"),
+        Some(&String::from("my cool tool")),
+    );
+    assert_eq!(
+        resolved.replacements.get("__ZAPPY_PROJECT_NAME_KEBAB__"),
+        Some(&String::from("my-cool-tool")),
+    );
+    assert_eq!(
+        resolved.replacements.get("__ZAPPY_PROJECT_NAME_SNAKE__"),
+        Some(&String::from("my_cool_tool")),
+    );
+    assert_eq!(
+        resolved.replacements.get("__ZAPPY_PROJECT_NAME_PASCAL__"),
+        Some(&String::from("MyCoolTool")),
+    );
+}
