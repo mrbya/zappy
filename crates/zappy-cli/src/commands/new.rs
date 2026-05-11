@@ -119,6 +119,18 @@ fn run_generation(
         }
     };
 
+    if !args.no_hooks
+        && !run_generation_hooks(
+            "post-generate",
+            zappy_hooks::HookPhase::PostGenerate,
+            &template.manifest.hooks.post_generate,
+            &plan.output_dir,
+            resolved,
+        )
+    {
+        return ExitCode::FAILURE;
+    }
+
     println!(
         "Generated `{}` in {}",
         args.template,
@@ -131,18 +143,6 @@ fn run_generation(
         summary.binary_files_copied,
         summary.skipped,
     );
-
-    if !args.no_hooks
-        && !run_generation_hooks(
-            "post-generate",
-            zappy_hooks::HookPhase::PostGenerate,
-            &template.manifest.hooks.post_generate,
-            &plan.output_dir,
-            resolved,
-        )
-    {
-        return ExitCode::FAILURE;
-    }
 
     ExitCode::SUCCESS
 }
