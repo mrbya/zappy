@@ -88,7 +88,7 @@ pub fn new(args: &NewArgs) -> ExitCode {
                 explicit: overrides,
                 interactive: VariableValueMap::new(),
                 user_defaults: VariableValueMap::new(),
-                builtins: VariableValueMap::new(),
+                builtins: new_command_builtins(args),
             };
 
             let resolved = match resolve_variables(&template.manifest.variables, &input) {
@@ -297,4 +297,16 @@ fn print_generation_plan(plan: &zappy_core::GenerationPlan) {
             }
         }
     }
+}
+
+/// Builds builtin variable map from `new` command arguments.
+fn new_command_builtins(args: &NewArgs) -> VariableValueMap {
+    let mut builtins = VariableValueMap::new();
+
+    builtins.insert(
+        String::from(zappy_core::builtins::PROJECT_NAME),
+        zappy_core::VariableValue::String(args.project_name.clone()),
+    );
+
+    builtins
 }
