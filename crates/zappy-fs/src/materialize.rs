@@ -104,7 +104,16 @@ pub fn materialize_generation_plan(
 }
 
 /// Creates a directory and all its missing parents.
-fn create_directory(path: &Path) -> FsResult<()> {
+///
+/// # Arguments
+/// - `path`: directory path.
+///
+/// # Returns
+/// Ok(()) on success.
+///
+/// # Errors
+/// Returns [`FsError::CreateDirectory`] on directory creation failure.
+pub fn create_directory(path: &Path) -> FsResult<()> {
     fs::create_dir_all(path).map_err(|source| {
         Box::new(FsError::CreateDirectory {
             path: path.to_path_buf(),

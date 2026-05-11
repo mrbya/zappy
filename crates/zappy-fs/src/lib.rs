@@ -79,16 +79,16 @@ pub mod plan;
 pub mod walk;
 
 // Re-exports.
-pub use classify::{FileKind, classify_file_by_path};
+pub use classify::{classify_file_by_path, FileKind};
 pub use discover::{
-    DiscoveredTemplate, DiscoveryConfig, TemplateCatalogue, TemplateSearchPath,
-    TemplateSearchPathKind, discover_templates, resolve_template_search_paths,
+    discover_templates, resolve_template_search_paths, DiscoveredTemplate, DiscoveryConfig,
+    TemplateCatalogue, TemplateSearchPath, TemplateSearchPathKind,
 };
 pub use error::{FsError, FsResult};
 pub use materialize::{
-    MaterializationOptions, MaterializationSummary, materialize_generation_plan,
+    create_directory, materialize_generation_plan, MaterializationOptions, MaterializationSummary,
 };
-pub use plan::{BuildPlanInput, build_generation_plan};
+pub use plan::{build_generation_plan, BuildPlanInput};
 
 // Tests.
 #[allow(clippy::panic)]
