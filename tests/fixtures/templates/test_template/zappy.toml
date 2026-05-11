@@ -50,18 +50,11 @@ binary_files = ["dir2/binary3.md"]
 path = "optional.md"
 when = "include_optional"
 
-# [[hooks.pre_generate]]
-# name = "Create project name dir"
-# command = "sh"
-# args = ["-c", "mkdir -p __ZAPPY_PROJECT_NAME__"]
-# when = "pre_hooks"
-# optional = false
-
 [[hooks.pre_generate]]
 name = "Write pre-generate tree"
 command = "sh"
 args = ["-c", "tree . -L 3 > __ZAPPY_PROJECT_NAME__.tree.pre"]
-when = "pre_hooks"
+when = "post_hooks"
 optional = false
 
 [[hooks.post_generate]]
@@ -77,3 +70,4 @@ command = "sh"
 args = ["-c", "tree . -L 3 > __ZAPPY_PROJECT_NAME__.tree.post"]
 when = "post_hooks"
 optional = false
+
