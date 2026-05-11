@@ -1,7 +1,7 @@
 use std::process::ExitCode;
 
-use zappy_core::{VariableResolutionInput, VariableValueMap, resolve_variables};
-use zappy_fs::{DiscoveredTemplate, DiscoveryConfig, discover_templates};
+use zappy_core::{resolve_variables, VariableResolutionInput, VariableValueMap};
+use zappy_fs::{create_directory, discover_templates, DiscoveredTemplate, DiscoveryConfig};
 
 use crate::cli::{CreateArgs, InfoArgs, InitArgs, ListArgs, NewArgs, ValidateArgs};
 
@@ -108,7 +108,7 @@ pub fn new(args: &NewArgs) -> ExitCode {
                 template_dir: &template.template_dir,
                 manifest: &template.manifest,
                 variables: &resolved,
-                output_dir,
+                output_dir: output_dir.clone(),
                 force: args.force,
             };
 
@@ -124,6 +124,11 @@ pub fn new(args: &NewArgs) -> ExitCode {
                 println!();
                 print_generation_plan(&plan);
                 return ExitCode::SUCCESS;
+            }
+
+            if let Err(error) = create_directory(&output_dir) {
+                eprintln!("Error: {error}");
+                return ExitCode::FAILURE;
             }
 
             if !args.no_hooks {
