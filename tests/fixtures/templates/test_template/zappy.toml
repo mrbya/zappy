@@ -70,4 +70,3 @@ command = "sh"
 args = ["-c", "tree . -L 3 > __ZAPPY_PROJECT_NAME__.tree.post"]
 when = "post_hooks"
 optional = false
-

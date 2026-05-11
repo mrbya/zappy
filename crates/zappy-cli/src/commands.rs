@@ -1,7 +1,7 @@
 use std::process::ExitCode;
 
-use zappy_core::{resolve_variables, VariableResolutionInput, VariableValueMap};
-use zappy_fs::{create_directory, discover_templates, DiscoveredTemplate, DiscoveryConfig};
+use zappy_core::{VariableResolutionInput, VariableValueMap, resolve_variables};
+use zappy_fs::{DiscoveredTemplate, DiscoveryConfig, create_directory, discover_templates};
 
 use crate::cli::{CreateArgs, InfoArgs, InitArgs, ListArgs, NewArgs, ValidateArgs};
 
