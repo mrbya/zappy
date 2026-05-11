@@ -114,7 +114,7 @@ fn run_generation(
     let summary = match zappy_fs::materialize_generation_plan(plan, options) {
         Ok(summary) => summary,
         Err(error) => {
-            eprint!("Error: {error}");
+            eprintln!("Error: {error}");
             return ExitCode::FAILURE;
         }
     };
@@ -165,7 +165,7 @@ fn run_generation_hooks(
     let summary = match zappy_hooks::execute_hooks(&input) {
         Ok(summary) => summary,
         Err(error) => {
-            eprint!("Error: {error}");
+            eprintln!("Error: {error}");
             return false;
         }
     };
