@@ -35,7 +35,7 @@ pub enum SourceEntryKind {
 /// - `source_root`: template source root to start walk in.
 ///
 /// # Returns
-/// Ok(Vec<SourceEntry>) vector of found and inspected file entries.
+/// Ok(`Vec<SourceEntry>`) vector of found and inspected file entries.
 ///
 /// # Errors
 /// - [`FsError::ReadSearchPath`] if fails to read a path,

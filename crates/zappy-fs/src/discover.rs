@@ -118,7 +118,7 @@ impl TemplateCatalogue {
 /// # Errors
 /// Returns following errors:
 /// - [`FsError::ResolveSearchPaths`] on search path resolution failure,
-/// - Other [`FsError`] on template discovery failure (see [`discover_templates_from_search_paths`]).
+/// - Other [`FsError`] on template discovery failure (see `discover_templates_from_search_paths`).
 pub fn discover_templates(config: &DiscoveryConfig) -> FsResult<TemplateCatalogue> {
     let search_paths = resolve_template_search_paths(config)?;
     discover_templates_from_search_paths(search_paths)
