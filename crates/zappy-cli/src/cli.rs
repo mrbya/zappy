@@ -110,6 +110,10 @@ pub struct NewArgs {
     /// Overwrite existing files.
     #[arg(short = 'f', long)]
     pub force: bool,
+
+    /// Do not run template hooks.
+    #[arg(short = 's', long)]
+    pub no_hooks: bool,
 }
 
 /// Zappy validate command args

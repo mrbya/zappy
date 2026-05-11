@@ -126,6 +126,25 @@ pub fn new(args: &NewArgs) -> ExitCode {
                 return ExitCode::SUCCESS;
             }
 
+            if !args.no_hooks {
+                let pre_input = zappy_hooks::ExecuteHooksInput {
+                    phase: zappy_hooks::HookPhase::PreGenerate,
+                    hooks: &template.manifest.hooks.pre_generate,
+                    output_dir: &plan.output_dir,
+                    variables: &resolved,
+                };
+
+                let pre_summary = match zappy_hooks::execute_hooks(&pre_input) {
+                    Ok(pre_summary) => pre_summary,
+                    Err(error) => {
+                        eprint!("Error {error}");
+                        return ExitCode::FAILURE;
+                    }
+                };
+
+                print_hook_summary("pre-generate", &pre_summary);
+            }
+
             let options = if args.force {
                 zappy_fs::MaterializationOptions::force()
             } else {
@@ -153,6 +172,26 @@ pub fn new(args: &NewArgs) -> ExitCode {
                 summary.binary_files_copied,
                 summary.skipped,
             );
+
+            if !args.no_hooks {
+                let post_input = zappy_hooks::ExecuteHooksInput {
+                    phase: zappy_hooks::HookPhase::PostGenerate,
+                    hooks: &template.manifest.hooks.post_generate,
+                    output_dir: &plan.output_dir,
+                    variables: &resolved,
+                };
+
+                let post_summary = match zappy_hooks::execute_hooks(&post_input) {
+                    Ok(post_summary) => post_summary,
+                    Err(error) => {
+                        eprint!("Error {error}");
+                        return ExitCode::FAILURE;
+                    }
+                };
+
+                print_hook_summary("post-generate", &post_summary);
+            }
+
             ExitCode::SUCCESS
         }
         Err(error) => {
@@ -309,4 +348,20 @@ fn new_command_builtins(args: &NewArgs) -> VariableValueMap {
     );
 
     builtins
+}
+
+/// Prints hooks execution summary.
+fn print_hook_summary(phase: &str, summary: &zappy_hooks::HookExecutionSummary) {
+    if summary.executed == 0 && summary.skipped == 0 && summary.optional_failed == 0 {
+        return;
+    }
+
+    println!(
+        "Hooks ({phase}): executed {}, skipped {}, optional failures {}.",
+        summary.executed, summary.skipped, summary.optional_failed,
+    );
+
+    for warning in &summary.warnings {
+        eprintln!("Warning: {warning}");
+    }
 }

@@ -1296,6 +1296,7 @@ dependencies = [
  "serde",
  "zappy-core",
  "zappy-fs",
+ "zappy-hooks",
 ]
 
 [[package]]
@@ -1323,6 +1324,12 @@ dependencies = [
 [[package]]
 name = "zappy-hooks"
 version = "0.0.1-pre"
+dependencies = [
+ "indexmap",
+ "tempfile",
+ "thiserror",
+ "zappy-core",
+]
 
 [[package]]
 name = "zerocopy"

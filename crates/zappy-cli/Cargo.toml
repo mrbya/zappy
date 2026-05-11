@@ -15,6 +15,7 @@ description = "Zappy - Clap CLI, prompts, logging, UX"
 [dependencies]
 zappy-core.workspace = true
 zappy-fs.workspace = true
+zappy-hooks.workspace = true
 clap.workspace = true
 serde.workspace = true
 
