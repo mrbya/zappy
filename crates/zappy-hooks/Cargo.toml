@@ -13,6 +13,12 @@ categories.workspace = true
 description = "Zappy - Pre/post generation + validation hooks"
 
 [dependencies]
+zappy-core.workspace = true
+thiserror.workspace = true
+indexmap.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
 
 [package.metadata.cargo-udeps.ignore]
 normal = [

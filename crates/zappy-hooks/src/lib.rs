@@ -4,5 +4,15 @@
 //! validation steps, teardown commands, working directories, environments, and
 //! stdout/stderr capture.
 
-/// Current crate version.
-pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+/// Hook errors.
+pub mod error;
+/// Generation hook execution.
+pub mod hooks;
+
+// Re-exports.
+pub use error::{HooksError, HooksResult};
+pub use hooks::{ExecuteHooksInput, HookExecutionSummary, HookPhase, execute_hooks};
+
+// Tests
+#[cfg(test)]
+mod tests;
