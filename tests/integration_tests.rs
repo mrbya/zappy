@@ -326,3 +326,37 @@ fn validate_keep_temp_prints_temp_dir() {
         .success()
         .stdout(predicates::str::contains("Validation temp dir kept at"));
 }
+
+#[test]
+fn init_creates_template_skeleton() {
+    let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+    let output_dir = temp_dir.path().join("rust-cli");
+
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args(["init", "--output"])
+        .arg(&output_dir)
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("Initialized template"));
+
+    assert!(output_dir.join("zappy.toml").exists());
+    assert!(output_dir.join("template/README.md").exists());
+}
+
+#[test]
+fn create_empty_creates_template_skeleton() {
+    let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+    let output_dir = temp_dir.path().join("rust-cli");
+
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args(["create", "--empty", "--output"])
+        .arg(&output_dir)
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("Initialized template"));
+
+    assert!(output_dir.join("zappy.toml").exists());
+    assert!(output_dir.join("template/README.md").exists());
+}
