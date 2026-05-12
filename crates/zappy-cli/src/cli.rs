@@ -140,30 +140,58 @@ pub struct InitArgs {
     /// Output path where the template skeleton should be created.
     #[arg(short = 'o', long)]
     pub output: PathBuf,
+
+    /// Optional template id.
+    #[arg(short = 't', long)]
+    pub template: Option<String>,
+
+    /// Optional template name.
+    #[arg(short = 'n', long)]
+    pub name: Option<String>,
+
+    /// Optional template description.
+    #[arg(short = 'd', long)]
+    pub description: Option<String>,
+
+    /// Force conflicting file overwrites?
+    #[arg(short = 'f', long)]
+    pub force: bool,
 }
 
 /// Zappy create command args.
 #[derive(Args, Debug, Clone)]
 pub struct CreateArgs {
     /// Existing project to turn into a template.
-    #[arg(short = 'f', long = "from")]
+    #[arg(short = 'i', long)]
     pub from: Option<PathBuf>,
 
-    /// Template ID/name.
-    #[arg(short = 't', long)]
-    pub template: Option<String>,
+    /// Putput path where the template/skeleton should be created.
+    #[arg(short = 'o', long)]
+    pub output: PathBuf,
 
     /// Generate an empty template skeleton.
     #[arg(short = 'e', long)]
     pub empty: bool,
 
-    /// Template description.
+    /// Optional template id.
+    #[arg(short = 't', long)]
+    pub template: Option<String>,
+
+    /// Optional template name.
+    #[arg(short = 'n', long)]
+    pub name: Option<String>,
+
+    /// Optional template description.
     #[arg(short = 's', long)]
     pub description: Option<String>,
 
     /// Template variables in `key=value` form.
     #[arg(short = 'a', long = "var")]
     pub vars: Vec<String>,
+
+    /// Force conflicting file overwrites?
+    #[arg(short = 'f', long)]
+    pub force: bool,
 }
 
 /// Run zappy CLI.

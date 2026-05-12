@@ -4,8 +4,8 @@ use zappy_core::builtins::PROJECT_NAME;
 use zappy_core::hooks::HookSpec;
 use zappy_core::{GenerationPlan, ResolvedVariables, VariableValue, VariableValueMap};
 use zappy_fs::{
-    DiscoveredTemplate, DiscoveryConfig, MaterializationOptions, create_directory,
-    discover_templates, materialize_generation_plan,
+    DiscoveredTemplate, DiscoveryConfig, InitTemplateInput, MaterializationOptions,
+    create_directory, discover_templates, init_template_skeleton, materialize_generation_plan,
 };
 use zappy_hooks::{ExecuteHooksInput, HookPhase, execute_hooks};
 
@@ -38,7 +38,7 @@ pub(super) fn resolve_template(
 /// Runs filesystem an hook execution paths for zappy commands.
 ///
 /// # Returns
-/// `true` if plan materialization or hook execution fails, `false` otherwise.
+/// `Err(())` if plan materialization or hook execution fails, `Ok(())` otherwise.
 pub(super) fn run_generation(
     no_hooks: bool,
     force: bool,
@@ -101,6 +101,26 @@ pub(super) fn run_generation(
     );
 
     Ok(())
+}
+
+/// Creates template skeleton based on provided input.
+///
+/// # Returns
+/// `Ok(())` on success `Err(())` otherwise.
+pub(super) fn create_template_skeleton(input: &InitTemplateInput) -> Result<(), ()> {
+    match init_template_skeleton(input) {
+        Ok(()) => {
+            println!(
+                "Initialized template skeleton at {}",
+                input.output_dir.display()
+            );
+            Ok(())
+        }
+        Err(error) => {
+            eprintln!("Error: {error}");
+            Err(())
+        }
+    }
 }
 
 /// Constructs command built-in variables.

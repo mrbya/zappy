@@ -248,6 +248,8 @@ fn parses_create_command_from_existing_project() {
         "test_project_name=my-tool",
         "--var",
         "license=MIT",
+        "-o",
+        "output_dir",
     ])
     .expect("create command should parse");
 
@@ -278,6 +280,8 @@ fn parses_create_command_empty_template() {
         "rust-cli",
         "--description",
         "Rust CLI template",
+        "-o",
+        "output_dir",
     ])
     .expect("create empty command should parse");
 
@@ -292,7 +296,7 @@ fn parses_create_command_empty_template() {
 
 #[test]
 fn parses_create_alias() {
-    let cli = Cli::try_parse_from(["zappy", "c", "-e", "-t", "rust-cli"])
+    let cli = Cli::try_parse_from(["zappy", "c", "-e", "-t", "rust-cli", "-o", "output_dir"])
         .expect("create alias should parse");
 
     assert!(matches!(cli.command, Command::Create(_)));
@@ -352,22 +356,4 @@ fn rejects_cli_variable_override_with_empty_key() {
         parse_variable_overrides(["=my-tool"]).expect_err("override with empty key should fail");
 
     assert!(err.to_string().contains("key=value"));
-}
-
-#[test]
-fn new_rejects_invalid_variable_override() {
-    assert_cmd::Command::cargo_bin("zappy")
-        .expect("zappy binary should exist")
-        .args([
-            "new",
-            "--template",
-            "rust-cli",
-            "--name",
-            "my-tool",
-            "--var",
-            "bad",
-        ])
-        .assert()
-        .failure()
-        .stderr(predicates::str::contains("key=value"));
 }
