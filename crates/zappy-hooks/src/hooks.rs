@@ -16,6 +16,15 @@ pub enum HookPhase {
 
     /// After generation files are materialized.
     PostGenerate,
+
+    /// Setup hooks before validation.
+    ValidationSetup,
+
+    /// Validation step hook.
+    ValidationStep,
+
+    /// Teardown hooks after validation.
+    ValidationTeardown,
 }
 
 /// Input for executing hooks.
