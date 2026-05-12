@@ -1,13 +1,13 @@
-use std::{path::Path, process::ExitCode};
+use std::path::Path;
+use std::process::ExitCode;
 
-use zappy_core::{
-    builtins::PROJECT_NAME, hooks::HookSpec, GenerationPlan, ResolvedVariables, VariableValue,
-    VariableValueMap,
-};
+use zappy_core::builtins::PROJECT_NAME;
+use zappy_core::hooks::HookSpec;
+use zappy_core::{GenerationPlan, ResolvedVariables, VariableValue, VariableValueMap};
 use zappy_fs::{
-    create_directory, materialize_generation_plan, DiscoveredTemplate, MaterializationOptions,
+    DiscoveredTemplate, MaterializationOptions, create_directory, materialize_generation_plan,
 };
-use zappy_hooks::{execute_hooks, ExecuteHooksInput, HookPhase};
+use zappy_hooks::{ExecuteHooksInput, HookPhase, execute_hooks};
 
 /// Runs filesystem an hook execution paths for zappy commands.
 ///

@@ -70,3 +70,27 @@ command = "sh"
 args = ["-c", "tree . -L 3 > __ZAPPY_PROJECT_NAME__.tree.post"]
 when = "post_hooks"
 optional = false
+
+[validation]
+output_dir_name = "validated-test-template"
+variables = {
+    test_var = "my cool tool",
+    include_optional = true,
+    pre_hooks = true,
+    post_hooks = true,
+}
+
+[[validation.steps]]
+name = "Check README exists"
+command = "test"
+args = ["-f", "README.md"]
+
+[[validation.steps]]
+name = "Check snake-case path exists"
+command = "test"
+args = ["-f", "dir4/my_cool_tool.md"]
+
+[[validation.steps]]
+name = "Check optional file exists"
+command = "test"
+args = ["-f", "optional.md"]

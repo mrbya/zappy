@@ -255,3 +255,74 @@ fn new_dry_run_does_not_write_files() {
         "dry-run must not create the output directory",
     );
 }
+
+#[test]
+fn new_rejects_invalid_variable_override() {
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args([
+            "new",
+            "--template",
+            "rust-cli",
+            "--name",
+            "my-tool",
+            "--var",
+            "bad",
+        ])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("key=value"));
+}
+
+#[test]
+fn validate_generates_and_checks_template() {
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args([
+            "validate",
+            "--template",
+            "test-template",
+            "--templates-dir",
+            "tests/fixtures/templates",
+        ])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains(
+            "Template `test-template` validated successfully.",
+        ));
+}
+
+#[test]
+fn validate_fails_without_validation_config() {
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args([
+            "validate",
+            "--template",
+            "template-without-validation",
+            "--templates-dir",
+            "tests/fixtures/templates",
+        ])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(
+            "does not define validation config",
+        ));
+}
+
+#[test]
+fn validate_keep_temp_prints_temp_dir() {
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args([
+            "validate",
+            "--template",
+            "test-template",
+            "--templates-dir",
+            "tests/fixtures/templates",
+            "--keep-temp",
+        ])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("Validation temp dir kept at"));
+}

@@ -1,19 +1,14 @@
-use std::{
-    path::{Path, PathBuf},
-    process::ExitCode,
-};
+use std::path::{Path, PathBuf};
+use std::process::ExitCode;
 
 use tempfile::TempDir;
-use zappy_core::{
-    resolve_variables, validation::ValidationConfig, VariableResolutionInput, VariableValueMap,
-};
-use zappy_fs::{build_generation_plan, discover_templates, BuildPlanInput, DiscoveryConfig};
+use zappy_core::validation::ValidationConfig;
+use zappy_core::{VariableResolutionInput, VariableValueMap, resolve_variables};
+use zappy_fs::{BuildPlanInput, DiscoveryConfig, build_generation_plan, discover_templates};
 use zappy_hooks::HookPhase;
 
-use crate::{
-    cli::ValidateArgs,
-    commands::helpers::{command_builtins, run_generation, run_hooks},
-};
+use crate::cli::ValidateArgs;
+use crate::commands::helpers::{command_builtins, run_generation, run_hooks};
 
 /// Validate command stub.
 pub fn validate(args: &ValidateArgs) -> ExitCode {
