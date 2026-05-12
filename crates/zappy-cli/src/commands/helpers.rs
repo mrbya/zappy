@@ -1,28 +1,54 @@
-use std::path::Path;
-use std::process::ExitCode;
+use std::path::{Path, PathBuf};
 
 use zappy_core::builtins::PROJECT_NAME;
 use zappy_core::hooks::HookSpec;
 use zappy_core::{GenerationPlan, ResolvedVariables, VariableValue, VariableValueMap};
 use zappy_fs::{
-    DiscoveredTemplate, MaterializationOptions, create_directory, materialize_generation_plan,
+    DiscoveredTemplate, DiscoveryConfig, MaterializationOptions, create_directory,
+    discover_templates, materialize_generation_plan,
 };
 use zappy_hooks::{ExecuteHooksInput, HookPhase, execute_hooks};
+
+/// Resolve command template.
+///
+/// # Returns
+/// Some(`DiscoveredTemplate`) discovered template on succes, None on failure.
+pub(super) fn resolve_template(
+    templates_dir: Option<PathBuf>,
+    id: &str,
+) -> Option<DiscoveredTemplate> {
+    let config = DiscoveryConfig { templates_dir };
+
+    let catalogue = match discover_templates(&config) {
+        Ok(catalogue) => catalogue,
+        Err(error) => {
+            eprintln!("Error: {error}");
+            return None;
+        }
+    };
+
+    let Some(template) = catalogue.find_by_id(id) else {
+        eprintln!("Error: template `{id}` was not found");
+        return None;
+    };
+
+    Some(template.clone())
+}
 
 /// Runs filesystem an hook execution paths for zappy commands.
 ///
 /// # Returns
-/// [`ExitCode::SUCCESS`] on success, [`ExitCode::FAILURE`] on failure.
+/// `true` if plan materialization or hook execution fails, `false` otherwise.
 pub(super) fn run_generation(
     no_hooks: bool,
     force: bool,
     template: &DiscoveredTemplate,
     resolved: &ResolvedVariables,
     plan: &GenerationPlan,
-) -> ExitCode {
+) -> bool {
     if let Err(error) = create_directory(&plan.output_dir) {
         eprintln!("Error: {error}");
-        return ExitCode::FAILURE;
+        return true;
     }
 
     if !no_hooks
@@ -34,7 +60,7 @@ pub(super) fn run_generation(
             resolved,
         )
     {
-        return ExitCode::FAILURE;
+        return true;
     }
 
     let options = MaterializationOptions { force };
@@ -43,7 +69,7 @@ pub(super) fn run_generation(
         Ok(summary) => summary,
         Err(error) => {
             eprintln!("Error: {error}");
-            return ExitCode::FAILURE;
+            return true;
         }
     };
 
@@ -56,7 +82,7 @@ pub(super) fn run_generation(
             resolved,
         )
     {
-        return ExitCode::FAILURE;
+        return true;
     }
 
     println!(
@@ -72,7 +98,7 @@ pub(super) fn run_generation(
         summary.skipped,
     );
 
-    ExitCode::SUCCESS
+    false
 }
 
 /// Constructs command built-in variables.

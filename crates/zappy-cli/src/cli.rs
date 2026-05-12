@@ -111,7 +111,7 @@ pub struct NewArgs {
     #[arg(short = 'f', long)]
     pub force: bool,
 
-    /// Do not run template hooks.
+    /// Do not run template generation hooks.
     #[arg(short = 's', long)]
     pub no_hooks: bool,
 }
@@ -130,6 +130,10 @@ pub struct ValidateArgs {
     /// Keep the temp validation directory.
     #[arg(short = 'k', long)]
     pub keep_temp: bool,
+
+    /// Do not run template generation hooks.
+    #[arg(short = 's', long)]
+    pub no_hooks: bool,
 }
 
 /// Zappy init command args.

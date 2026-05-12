@@ -1,10 +1,9 @@
 use std::process::ExitCode;
 
 use zappy_core::{VariableResolutionInput, VariableValueMap, resolve_variables};
-use zappy_fs::{DiscoveryConfig, discover_templates};
 
 use crate::cli::NewArgs;
-use crate::commands::helpers::{command_builtins, run_generation};
+use crate::commands::helpers::{command_builtins, resolve_template, run_generation};
 
 /// Zappy command: new.
 pub fn new(args: &NewArgs) -> ExitCode {
@@ -14,20 +13,8 @@ pub fn new(args: &NewArgs) -> ExitCode {
             println!("template: {}", args.template);
             println!("project: {}", args.project_name);
 
-            let config = DiscoveryConfig {
-                templates_dir: args.templates_dir.clone(),
-            };
-
-            let catalogue = match discover_templates(&config) {
-                Ok(catalogue) => catalogue,
-                Err(error) => {
-                    eprintln!("Error: {error}");
-                    return ExitCode::FAILURE;
-                }
-            };
-
-            let Some(template) = catalogue.find_by_id(&args.template) else {
-                eprintln!("Error: template `{}` was not found", args.template);
+            let Some(template) = resolve_template(args.templates_dir.clone(), &args.template)
+            else {
                 return ExitCode::FAILURE;
             };
 
@@ -74,7 +61,11 @@ pub fn new(args: &NewArgs) -> ExitCode {
             }
 
             //run_generation(args, template, &resolved, &plan)
-            run_generation(args.no_hooks, args.force, template, &resolved, &plan)
+            if run_generation(args.no_hooks, args.force, &template, &resolved, &plan) {
+                return ExitCode::FAILURE;
+            }
+
+            ExitCode::SUCCESS
         }
         Err(error) => {
             eprintln!("Error: {error}");

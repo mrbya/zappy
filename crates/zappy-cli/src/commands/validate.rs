@@ -4,28 +4,15 @@ use std::process::ExitCode;
 use tempfile::TempDir;
 use zappy_core::validation::ValidationConfig;
 use zappy_core::{VariableResolutionInput, VariableValueMap, resolve_variables};
-use zappy_fs::{BuildPlanInput, DiscoveryConfig, build_generation_plan, discover_templates};
+use zappy_fs::{BuildPlanInput, build_generation_plan};
 use zappy_hooks::HookPhase;
 
 use crate::cli::ValidateArgs;
-use crate::commands::helpers::{command_builtins, run_generation, run_hooks};
+use crate::commands::helpers::{command_builtins, resolve_template, run_generation, run_hooks};
 
 /// Validate command stub.
 pub fn validate(args: &ValidateArgs) -> ExitCode {
-    let config = DiscoveryConfig {
-        templates_dir: args.templates_dir.clone(),
-    };
-
-    let catalogue = match discover_templates(&config) {
-        Ok(catalogue) => catalogue,
-        Err(error) => {
-            eprintln!("Error: {error}");
-            return ExitCode::FAILURE;
-        }
-    };
-
-    let Some(template) = catalogue.find_by_id(&args.template) else {
-        eprintln!("Error: template `{}` was not found", args.template);
+    let Some(template) = resolve_template(args.templates_dir.clone(), &args.template) else {
         return ExitCode::FAILURE;
     };
 
@@ -83,7 +70,7 @@ pub fn validate(args: &ValidateArgs) -> ExitCode {
         }
     };
 
-    if run_generation(false, true, template, &resolved, &plan) == ExitCode::FAILURE {
+    if run_generation(args.no_hooks, true, &template, &resolved, &plan) {
         return ExitCode::FAILURE;
     }
 
