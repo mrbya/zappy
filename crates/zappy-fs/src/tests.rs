@@ -2,7 +2,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use tempfile::TempDir;
-use zappy_core::{GenerationPlan, PlanOperation, TemplateId};
+use zappy_core::{GenerationPlan, Manifest, PlanOperation, TemplateId};
 
 use super::*;
 use crate::discover::discover_templates_from_search_paths;
@@ -243,4 +243,88 @@ fn overwrites_existing_file_with_force() {
     let content = fs::read_to_string(destination).expect("overwritten file should be readable");
 
     assert_eq!(content, "new");
+}
+
+#[test]
+fn initializes_template_skeleton() {
+    let temp_dir = TempDir::new().expect("tempdir should be created");
+    let output_dir = temp_dir.path().join("rust-cli");
+
+    let input = InitTemplateInput {
+        output_dir: output_dir.clone(),
+        template_id: Some(String::from("rust-cli")),
+        name: None,
+        description: None,
+        force: false,
+    };
+
+    crate::init_template_skeleton(&input).expect("template skeleton should be initialized");
+
+    assert!(output_dir.join("zappy.toml").exists());
+    assert!(output_dir.join("template/README.md").exists());
+}
+
+#[test]
+fn init_skeleton_refuses_existing_without_force() {
+    let temp_dir = TempDir::new().expect("tempdir should be created");
+    let output_dir = temp_dir.path().join("rust-cli");
+
+    let input = InitTemplateInput {
+        output_dir,
+        template_id: Some(String::from("rust-cli")),
+        name: None,
+        description: None,
+        force: false,
+    };
+
+    crate::init_template_skeleton(&input).expect("template skeleton should be initialized");
+
+    let err = crate::init_template_skeleton(&input);
+    assert!(err.is_err_and(|e| e.to_string().contains("already exists")));
+}
+
+#[test]
+fn init_skeleton_overwrites_existing_with_force() {
+    let temp_dir = TempDir::new().expect("tempdir should be created");
+    let output_dir = temp_dir.path().join("rust-cli");
+
+    let mut input = InitTemplateInput {
+        output_dir: output_dir.clone(),
+        template_id: Some(String::from("rust-cli")),
+        name: None,
+        description: None,
+        force: true,
+    };
+
+    crate::init_template_skeleton(&input).expect("template skeleton should be initialized");
+
+    input.name = Some(String::from("another name"));
+
+    assert!(crate::init_template_skeleton(&input).is_ok());
+    let readme_path = output_dir.join("template").join("README.md");
+    let readme = fs::read_to_string(readme_path).expect("should be able to read README");
+    assert!(readme.contains("another name"));
+}
+
+#[test]
+fn init_skeleton_manifest_parses() {
+    let temp_dir = TempDir::new().expect("tempdir should be created");
+    let output_dir = temp_dir.path().join("rust-cli");
+
+    let input = InitTemplateInput {
+        output_dir: output_dir.clone(),
+        template_id: Some(String::from("rust-cli")),
+        name: None,
+        description: None,
+        force: false,
+    };
+
+    crate::init_template_skeleton(&input).expect("template skeleton should be initialized");
+
+    let read_result = Manifest::load_from_path(output_dir.join("zappy.toml"));
+    assert!(read_result.is_ok());
+    assert_eq!(
+        read_result.expect("should be ok").template.id.as_str(),
+        "rust-cli"
+    );
 }

@@ -16,6 +16,7 @@ description = "Zappy - Safe filesystem ops"
 zappy-core.workspace = true
 directories.workspace = true
 thiserror.workspace = true
+heck.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true

@@ -125,7 +125,7 @@ pub fn create_directory(path: &Path) -> FsResult<()> {
 // TODO: Preserve Unix executable bits for copied/rendered files.
 
 /// Writes a rendered UTF-8 file.
-fn write_text_file(path: &Path, content: &str, force: bool) -> FsResult<()> {
+pub(crate) fn write_text_file(path: &Path, content: &str, force: bool) -> FsResult<()> {
     ensure_can_write_file(path, force)?;
 
     if let Some(parent) = path.parent() {

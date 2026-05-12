@@ -71,6 +71,8 @@ pub mod classify;
 pub mod discover;
 /// Filesystem error types.
 pub mod error;
+/// Template skeleton generation.
+pub mod init;
 /// Generation plan materialization.
 pub mod materialize;
 /// Generation plan build.
@@ -85,6 +87,7 @@ pub use discover::{
     TemplateSearchPathKind, discover_templates, resolve_template_search_paths,
 };
 pub use error::{FsError, FsResult};
+pub use init::{InitTemplateInput, init_template_skeleton};
 pub use materialize::{
     MaterializationOptions, MaterializationSummary, create_directory, materialize_generation_plan,
 };
