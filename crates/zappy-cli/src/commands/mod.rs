@@ -4,6 +4,8 @@
 
 /// Creates a template from an existing project.
 pub mod create;
+/// Command handler helpers.
+pub mod helpers;
 /// Displays detailed info about a template.
 pub mod info;
 /// Initializes an empty template skeleton.

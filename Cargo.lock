@@ -1294,6 +1294,7 @@ dependencies = [
  "clap",
  "predicates",
  "serde",
+ "tempfile",
  "zappy-core",
  "zappy-fs",
  "zappy-hooks",

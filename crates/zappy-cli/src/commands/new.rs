@@ -1,9 +1,10 @@
 use std::process::ExitCode;
 
-use zappy_core::{VariableResolutionInput, VariableValueMap, resolve_variables};
-use zappy_fs::{DiscoveryConfig, create_directory, discover_templates};
+use zappy_core::{resolve_variables, VariableResolutionInput, VariableValueMap};
+use zappy_fs::{discover_templates, DiscoveryConfig};
 
 use crate::cli::NewArgs;
+use crate::commands::helpers::{command_builtins, run_generation};
 
 /// Zappy command: new.
 pub fn new(args: &NewArgs) -> ExitCode {
@@ -34,7 +35,7 @@ pub fn new(args: &NewArgs) -> ExitCode {
                 explicit: overrides,
                 interactive: VariableValueMap::new(),
                 user_defaults: VariableValueMap::new(),
-                builtins: new_command_builtins(args),
+                builtins: command_builtins(args.project_name.clone()),
             };
 
             let resolved = match resolve_variables(&template.manifest.variables, &input) {
@@ -72,106 +73,14 @@ pub fn new(args: &NewArgs) -> ExitCode {
                 return ExitCode::SUCCESS;
             }
 
-            run_generation(args, template, &resolved, &plan)
+            //run_generation(args, template, &resolved, &plan)
+            run_generation(args.no_hooks, args.force, template, &resolved, &plan)
         }
         Err(error) => {
             eprintln!("Error: {error}");
             ExitCode::FAILURE
         }
     }
-}
-
-/// Runs the filesystem and hook execution path for `zappy new`.
-fn run_generation(
-    args: &NewArgs,
-    template: &zappy_fs::DiscoveredTemplate,
-    resolved: &zappy_core::ResolvedVariables,
-    plan: &zappy_core::GenerationPlan,
-) -> ExitCode {
-    if let Err(error) = create_directory(&plan.output_dir) {
-        eprintln!("Error: {error}");
-        return ExitCode::FAILURE;
-    }
-
-    if !args.no_hooks
-        && !run_generation_hooks(
-            "pre-generate",
-            zappy_hooks::HookPhase::PreGenerate,
-            &template.manifest.hooks.pre_generate,
-            &plan.output_dir,
-            resolved,
-        )
-    {
-        return ExitCode::FAILURE;
-    }
-
-    let options = if args.force {
-        zappy_fs::MaterializationOptions::force()
-    } else {
-        zappy_fs::MaterializationOptions::no_force()
-    };
-
-    let summary = match zappy_fs::materialize_generation_plan(plan, options) {
-        Ok(summary) => summary,
-        Err(error) => {
-            eprintln!("Error: {error}");
-            return ExitCode::FAILURE;
-        }
-    };
-
-    if !args.no_hooks
-        && !run_generation_hooks(
-            "post-generate",
-            zappy_hooks::HookPhase::PostGenerate,
-            &template.manifest.hooks.post_generate,
-            &plan.output_dir,
-            resolved,
-        )
-    {
-        return ExitCode::FAILURE;
-    }
-
-    println!(
-        "Generated `{}` in {}",
-        args.template,
-        plan.output_dir.display()
-    );
-    println!(
-        "Created {} directories, wrote {} text files, copied {} binary files, skipped {} paths.",
-        summary.directories_created,
-        summary.text_files_written,
-        summary.binary_files_copied,
-        summary.skipped,
-    );
-
-    ExitCode::SUCCESS
-}
-
-/// Executes generation hooks for one phase and prints the phase summary.
-fn run_generation_hooks(
-    phase_name: &str,
-    phase: zappy_hooks::HookPhase,
-    hooks: &[zappy_core::hooks::HookSpec],
-    output_dir: &std::path::Path,
-    resolved: &zappy_core::ResolvedVariables,
-) -> bool {
-    let input = zappy_hooks::ExecuteHooksInput {
-        phase,
-        hooks,
-        output_dir,
-        variables: resolved,
-    };
-
-    let summary = match zappy_hooks::execute_hooks(&input) {
-        Ok(summary) => summary,
-        Err(error) => {
-            eprintln!("Error: {error}");
-            return false;
-        }
-    };
-
-    print_hook_summary(phase_name, &summary);
-    true
 }
 
 /// Prints generation plan for the `new` command dry-run.
@@ -233,33 +142,5 @@ fn print_generation_plan(plan: &zappy_core::GenerationPlan) {
                 println!("SKIP         {} [{reason:?}]", source.display());
             }
         }
-    }
-}
-
-/// Builds builtin variable map from `new` command arguments.
-fn new_command_builtins(args: &NewArgs) -> VariableValueMap {
-    let mut builtins = VariableValueMap::new();
-
-    builtins.insert(
-        String::from(zappy_core::builtins::PROJECT_NAME),
-        zappy_core::VariableValue::String(args.project_name.clone()),
-    );
-
-    builtins
-}
-
-/// Prints hooks execution summary.
-fn print_hook_summary(phase: &str, summary: &zappy_hooks::HookExecutionSummary) {
-    if summary.executed == 0 && summary.skipped == 0 && summary.optional_failed == 0 {
-        return;
-    }
-
-    println!(
-        "Hooks ({phase}): executed {}, skipped {}, optional failures {}.",
-        summary.executed, summary.skipped, summary.optional_failed,
-    );
-
-    for warning in &summary.warnings {
-        eprintln!("Warning: {warning}");
     }
 }
