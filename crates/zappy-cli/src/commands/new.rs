@@ -61,7 +61,7 @@ pub fn new(args: &NewArgs) -> ExitCode {
             }
 
             //run_generation(args, template, &resolved, &plan)
-            if run_generation(args.no_hooks, args.force, &template, &resolved, &plan) {
+            if run_generation(args.no_hooks, args.force, &template, &resolved, &plan).is_err() {
                 return ExitCode::FAILURE;
             }
 

@@ -45,10 +45,10 @@ pub(super) fn run_generation(
     template: &DiscoveredTemplate,
     resolved: &ResolvedVariables,
     plan: &GenerationPlan,
-) -> bool {
+) -> Result<(), ()> {
     if let Err(error) = create_directory(&plan.output_dir) {
         eprintln!("Error: {error}");
-        return true;
+        return Err(());
     }
 
     if !no_hooks
@@ -59,8 +59,9 @@ pub(super) fn run_generation(
             &plan.output_dir,
             resolved,
         )
+        .is_err()
     {
-        return true;
+        return Err(());
     }
 
     let options = MaterializationOptions { force };
@@ -69,7 +70,7 @@ pub(super) fn run_generation(
         Ok(summary) => summary,
         Err(error) => {
             eprintln!("Error: {error}");
-            return true;
+            return Err(());
         }
     };
 
@@ -81,8 +82,9 @@ pub(super) fn run_generation(
             &plan.output_dir,
             resolved,
         )
+        .is_err()
     {
-        return true;
+        return Err(());
     }
 
     println!(
@@ -98,7 +100,7 @@ pub(super) fn run_generation(
         summary.skipped,
     );
 
-    false
+    Ok(())
 }
 
 /// Constructs command built-in variables.
@@ -123,7 +125,7 @@ pub(super) fn run_hooks(
     hooks: &[HookSpec],
     output_dir: &Path,
     resolved: &ResolvedVariables,
-) -> bool {
+) -> Result<(), ()> {
     let input = ExecuteHooksInput {
         phase,
         hooks,
@@ -135,12 +137,12 @@ pub(super) fn run_hooks(
         Ok(summary) => summary,
         Err(error) => {
             eprintln!("Error: {error}");
-            return true;
+            return Err(());
         }
     };
 
     print_hook_summary(phase_name, &summary);
-    false
+    Ok(())
 }
 
 /// Prints hooks execution summary.

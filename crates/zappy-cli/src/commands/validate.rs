@@ -70,7 +70,7 @@ pub fn validate(args: &ValidateArgs) -> ExitCode {
         }
     };
 
-    if run_generation(args.no_hooks, true, &template, &resolved, &plan) {
+    if run_generation(args.no_hooks, true, &template, &resolved, &plan).is_err() {
         return ExitCode::FAILURE;
     }
 
@@ -82,7 +82,7 @@ pub fn validate(args: &ValidateArgs) -> ExitCode {
         &resolved,
     );
 
-    let steps_result = if setup_result {
+    let steps_result = if setup_result.is_err() {
         true
     } else {
         run_hooks(
@@ -92,6 +92,7 @@ pub fn validate(args: &ValidateArgs) -> ExitCode {
             &output_dir,
             &resolved,
         )
+        .is_err()
     };
 
     if steps_result
@@ -102,6 +103,7 @@ pub fn validate(args: &ValidateArgs) -> ExitCode {
             &output_dir,
             &resolved,
         )
+        .is_err()
     {
         return ExitCode::FAILURE;
     }

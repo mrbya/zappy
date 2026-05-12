@@ -12,9 +12,7 @@ use crate::commands;
 #[command(name = "zappy")]
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
-    /// Output verbosity..
-    ///
-    /// Use `-v`, `-vv`, `-vvv` for increasingly detailed output.
+    /// Output verbosity. Use `-v`, `-vv`, `-vvv` for increasingly detailed output.
     #[arg(short, long, action = clap::ArgAction::Count)]
     pub verbose: u8,
 
@@ -131,7 +129,7 @@ pub struct ValidateArgs {
     #[arg(short = 'k', long)]
     pub keep_temp: bool,
 
-    /// Do not run template generation hooks.
+    /// Do not run template generation hooks. (has no effect on validation hooks)
     #[arg(short = 's', long)]
     pub no_hooks: bool,
 }
