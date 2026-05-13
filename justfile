@@ -79,6 +79,7 @@ unused *FLAGS:
 # Validates bundled templates.
 test-templates:
     @just run -- validate -t rust-cli
+    @just run -- validate -t cpp-cmake-app
 
 # Check formatting and linter checks, check for unused dependencies and audits for vulnerabilities.
 thorough-check:
