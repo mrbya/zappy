@@ -17,22 +17,6 @@ description = {
     }
 }
 
-author = {
-    required = true,
-    default = "TODO: add author",
-    placeholders = {
-        raw = "__AUTHOR__",
-    }
-}
-
-email = {
-    required = true,
-    default = "TODO: add author email",
-    placeholders = {
-        raw = "__EMAIL__",
-    }
-}
-
 repo = {
     required = true,
     default = "TODO: add project repo",
@@ -46,7 +30,7 @@ use_gitlab_ci = {
 }
 
 gitlab_image_registry = {
-    default = "<TODO: add gitlab image registry>",
+    default = "{TODO: add gitlab image registry}",
     placeholders = {
         raw = "__GITLAB_IMAGE_REGISTRY__",
     }
@@ -83,8 +67,6 @@ optional = true
 output_dir_name = "zappy-validation-rust-cli"
 variables = {
     description = "Generated test CLI",
-    author = "brucelee",
-    email = "bruce.lee@hotmail.com",
     repo = "https://github.com/brucelee/nope.git",
     use_gitlab_ci = false,
     use_github_actions = false,

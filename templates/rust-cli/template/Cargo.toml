@@ -7,7 +7,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-authors                 = ["__AUTHOR__ <__EMAIL__>"]
+authors                 = ["__ZAPPY_USER__ <__ZAPPY_EMAIL__>"]
 description             = "__DESCRIPTION__"
 edition                 = "2024"
 rust-version            = "1.85.0"

@@ -20,14 +20,6 @@ description = {
     }
 }
 
-author = {
-    required = true,
-    default = "<TODO: add author>",
-    placeholders = {
-        raw = "__AUTHOR__",
-    }
-}
-
 # Template file path config.
 [paths]
 exclude = [".git", ".DS_Store", "build"]
@@ -48,7 +40,6 @@ binary_files = [
 output_dir_name = "zappy-validation-cpp-cmake-app"
 variables = {
     description = "Generated C++ CMake app",
-    author = "brucelee"
 }
 
 # Validation setup hooks.
