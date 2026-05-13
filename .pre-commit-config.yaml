@@ -46,4 +46,4 @@ repos:
         language: unsupported
         entry: just test-templates
         pass_filenames: false
-        files: ^templates/
+        files: ^crates/zappy-templates/templates/
