@@ -360,3 +360,31 @@ fn create_empty_creates_template_skeleton() {
     assert!(output_dir.join("zappy.toml").exists());
     assert!(output_dir.join("template/README.md").exists());
 }
+
+#[test]
+fn template_rust_cli_validates() {
+    let output = tempfile::TempDir::new().expect("output tempdir should be created");
+    let project_dir = output.path().join("my-tool");
+
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args([
+            "new",
+            "--template",
+            "rust-cli",
+            "--templates-dir",
+            "templates",
+            "--name",
+            "my_tool",
+            "--var",
+            "description=\"My generated tool\"",
+            "--output",
+        ])
+        .arg(&project_dir)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Generated `rust-cli`"));
+
+    assert!(project_dir.join("Cargo.toml").exists());
+    assert!(project_dir.join("src/main.rs").exists());
+}
