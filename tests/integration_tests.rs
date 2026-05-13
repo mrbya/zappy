@@ -362,7 +362,7 @@ fn create_empty_creates_template_skeleton() {
 }
 
 #[test]
-fn template_rust_cli_validates() {
+fn template_rust_cli_generates() {
     let output = tempfile::TempDir::new().expect("output tempdir should be created");
     let project_dir = output.path().join("my-tool");
 
@@ -387,4 +387,32 @@ fn template_rust_cli_validates() {
 
     assert!(project_dir.join("Cargo.toml").exists());
     assert!(project_dir.join("src/main.rs").exists());
+}
+
+#[test]
+fn template_cpp_cmake_app_generates() {
+    let output = tempfile::TempDir::new().expect("output tempdir should be created");
+    let project_dir = output.path().join("my-tool");
+
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args([
+            "new",
+            "--template",
+            "cpp-cmake-app",
+            "--templates-dir",
+            "templates",
+            "--name",
+            "my_tool",
+            "--var",
+            "description=\"My generated tool\"",
+            "--output",
+        ])
+        .arg(&project_dir)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Generated `cpp-cmake-app`"));
+
+    assert!(project_dir.join("CMakeLists.txt").exists());
+    assert!(project_dir.join("src/main.cpp").exists());
 }
