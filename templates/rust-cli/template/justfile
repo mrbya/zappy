@@ -109,6 +109,10 @@ install-hooks:
 install:
     cargo install --path .
 
+# Install pre-commit hooks.
+pre-commit-install:
+    pre-commit install
+
 # Builds docker image for a gitlab CI runner.
 docker-build:
     #!/usr/bin/env bash
