@@ -1,0 +1,68 @@
+# Template metadata.
+[template]
+id = "cpp-cmake-lib"
+name = "C++ CMake library"
+description = "C++ static library managed by CMake build system"
+language = "cpp"
+version = "0.1.0"
+
+# Template source directory.
+[template.source]
+root = "template"
+
+# Template variable definitions.
+[variables]
+description = {
+    required = true,
+    default = "TODO: add project description",
+    placeholders = {
+        raw = "__DESCRIPTION__",
+    }
+}
+
+# Template file path config.
+[paths]
+exclude = [".git", ".DS_Store", "build"]
+binary_extensions = ["png", "jpg", "jpeg", "gif", "ico", "pdf", "zip", ".cmake"]
+binary_files = [
+    "gtestsetup/.gitignore",
+    "gtestsetup/CMakeLists.txt",
+    "gtestsetup/gtestsetup.cmake",
+    "gtestsetup/LICENSE",
+    "gtestsetup/README.md"
+]
+
+# Template generation hooks
+[hooks]
+
+# Template validation config.
+[validation]
+output_dir_name = "zappy-validation-cpp-cmake-app"
+variables = {
+    description = "Generated C++ CMake app",
+}
+
+# Validation setup hooks.
+[[validation.setup]]
+name = "create build dir"
+command = "mkdir"
+args = ["build"]
+
+# Validation process steps.
+[[validation.steps]]
+name = "configure project"
+working_dir = "build"
+command = "cmake"
+args = ["..", "-GNinja"]
+
+[[validation.steps]]
+name = "build project"
+working_dir = "build"
+command = "ninja"
+args = []
+
+[[validation.steps]]
+name = "test project"
+working_dir = "build"
+command = "ninja"
+args = ["test"]

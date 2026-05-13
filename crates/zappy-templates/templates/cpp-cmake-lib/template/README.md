@@ -59,12 +59,6 @@ ninja
 ninja test
 ```
 
-4. Run app:
-```bash
-# inside build dir
-ninja run
-```
-
 ## Documentation
 
 Generate documentation:
