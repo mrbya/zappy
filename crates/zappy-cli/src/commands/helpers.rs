@@ -9,6 +9,27 @@ use zappy_fs::{
     create_directory, discover_templates, init_template_skeleton, materialize_generation_plan,
 };
 use zappy_hooks::{ExecuteHooksInput, HookPhase, execute_hooks};
+use zappy_templates::ensure_bundled_templates_available;
+
+/// Constructs discovery config.
+pub(super) fn discovery_config(templates_dir: Option<PathBuf>) -> DiscoveryConfig {
+    let bundled_templates_dir = if templates_dir.is_some() {
+        None
+    } else {
+        match ensure_bundled_templates_available() {
+            Ok(path) => Some(path),
+            Err(error) => {
+                eprint!("warning: failed to prepare bundled templates: {error}");
+                None
+            }
+        }
+    };
+
+    DiscoveryConfig {
+        templates_dir,
+        bundled_templates_dir,
+    }
+}
 
 /// Resolve command template.
 ///
@@ -18,7 +39,7 @@ pub(super) fn resolve_template(
     templates_dir: Option<PathBuf>,
     id: &str,
 ) -> Option<DiscoveredTemplate> {
-    let config = DiscoveryConfig { templates_dir };
+    let config = discovery_config(templates_dir);
 
     let catalogue = match discover_templates(&config) {
         Ok(catalogue) => catalogue,

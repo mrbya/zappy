@@ -1,14 +1,13 @@
 use std::process::ExitCode;
 
-use zappy_fs::{DiscoveredTemplate, DiscoveryConfig, discover_templates};
+use zappy_fs::{DiscoveredTemplate, discover_templates};
 
 use crate::cli::InfoArgs;
+use crate::commands::helpers::discovery_config;
 
 /// Info command stub.
 pub fn info(args: &InfoArgs) -> ExitCode {
-    let config = DiscoveryConfig {
-        templates_dir: args.templates_dir.clone(),
-    };
+    let config = discovery_config(args.templates_dir.clone());
 
     let catalogue = match discover_templates(&config) {
         Ok(catalogue) => catalogue,
