@@ -7,12 +7,12 @@ members = [
 resolver = "2"
 
 [workspace.package]
-authors                 = ["mrbya <v.toth.svk2@gmail.com>"]
+authors                 = ["__AUTHOR__ <__EMAIL__>"]
 description             = "__DESCRIPTION__"
 edition                 = "2024"
 rust-version            = "1.85.0"
-homepage                = "TODO: add homepage"
-repository              = "TODO: add repo"
+homepage                = "__REPO__"
+repository              = "__REPO__"
 license                 = "MIT OR Apache-2.0"
 keywords                = ["__ZAPPY_PROJECT_NAME_KEBAB__", "cli"]
 categories              = ["command-line-utilities"]
@@ -34,8 +34,8 @@ publish                 = true
 
 [workspace.dependencies]
 # __ZAPPY_PROJECT_NAME__ crates
-__ZAPPY_PROJECT_NAME_KEBAB__-shell         = { path = "crates/__ZAPPY_PROJECT_NAME_KEBAB__-shell" }
-__ZAPPY_PROJECT_NAME_KEBAB__-core          = { path = "crates/__ZAPPY_PROJECT_NAME_KEBAB__-core" }
+__ZAPPY_PROJECT_NAME_KEBAB__-shell  = { path = "crates/__ZAPPY_PROJECT_NAME_KEBAB__-shell" }
+__ZAPPY_PROJECT_NAME_KEBAB__-core   = { path = "crates/__ZAPPY_PROJECT_NAME_KEBAB__-core" }
 # Other workspace deps
 clap                    = { version = "4", features = ["derive"] }
 criterion               = { version = "0.8" }
@@ -63,6 +63,11 @@ full = []
 name = "__ZAPPY_PROJECT_NAME_KEBAB__"
 path = "src/main.rs"
 bench = false
+
+[[bench]]
+name = "benches"
+harness = false
+required-features = ["full"]
 
 [package.metadata.cargo-udeps.ignore]
 normal = [

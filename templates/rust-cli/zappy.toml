@@ -11,15 +11,45 @@ root = "template"
 [variables]
 description = {
     required = true,
-    default = "A small Rust CLI application.",
-    transforms = ["raw"],
+    default = "TODO: add project description",
     placeholders = {
         raw = "__DESCRIPTION__",
     }
 }
 
+author = {
+    required = true,
+    default = "TODO: add author",
+    placeholders = {
+        raw = "__AUTHOR__",
+    }
+}
+
+email = {
+    required = true,
+    default = "TODO: add author email",
+    placeholders = {
+        raw = "__EMAIL__",
+    }
+}
+
+repo = {
+    required = true,
+    default = "TODO: add project repo",
+    placeholders = {
+        raw = "__REPO__",
+    }
+}
+
 use_gitlab_ci = {
     default = false,
+}
+
+gitlab_image_registry = {
+    default = "<TODO: add gitlab image registry>",
+    placeholders = {
+        raw = "__GITLAB_IMAGE_REGISTRY__",
+    }
 }
 
 use_github_actions = {
@@ -32,8 +62,16 @@ binary_extensions = ["png", "jpg", "jpeg", "gif", "ico", "pdf", "zip"]
 binary_files = ["Cargo.lock"]
 
 [[conditionals]]
-path = "optional_file.txt"
-when = "include_optional"
+path = ".gitlab-ci.yml"
+when = "use_gitlab_ci"
+
+[[conditionals]]
+path = "Dockerfile"
+when = "use_gitlab_ci"
+
+[[conditionals]]
+path = ".github/workflows/ci.yml"
+when = "use_github_actions"
 
 [[hooks.post_generate]]
 name = "Format Rust project"
@@ -45,16 +83,24 @@ optional = true
 output_dir_name = "zappy-validation-rust-cli"
 variables = {
     description = "Generated test CLI",
+    author = "brucelee",
+    email = "bruce.lee@hotmail.com",
+    repo = "https://github.com/brucelee/nope.git",
     use_gitlab_ci = false,
     use_github_actions = false,
 }
 
-[[validation.steps]]
-name = "cargo clippy"
-command = "cargo"
-args = ["clippy", "--", "-D", "warnings"]
+[[validation.setup]]
+name = "install just"
+command = "sh"
+args = ["-c", "just -V || cargo install just"]
+
+[[validation.setup]]
+name = "bootstrap recipe"
+command = "just"
+args = ["init"]
 
 [[validation.steps]]
-name = "cargo test"
-command = "cargo"
-args = ["test"]
+name = "lint checks, audit, udeps and tests"
+command = "just"
+args = ["ci"]

@@ -1,3 +1,3 @@
 fn main() -> std::process::ExitCode {
-    zappy_app::run()
+    __ZAPPY_PROJECT_NAME_SNAKE__::run()
 }

@@ -1,6 +1,6 @@
 //! `__ZAPPY_PROJECT_NAME__` core API.
 //!
-//! This crate owns the core business logic of `__ZAPPY_PROJECT_NAME_KEBAB_`.
+//! This crate owns the core business logic of `__ZAPPY_PROJECT_NAME_KEBAB__`.
 
 #![allow(clippy::module_name_repetitions)]
 // clippy WARN level lints

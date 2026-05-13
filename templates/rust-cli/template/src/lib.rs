@@ -65,4 +65,4 @@
     clippy::verbose_file_reads
 )]
 
-pub use zappy_app_shell::cli::run;
+pub use __ZAPPY_PROJECT_NAME_SNAKE___shell::cli::run;

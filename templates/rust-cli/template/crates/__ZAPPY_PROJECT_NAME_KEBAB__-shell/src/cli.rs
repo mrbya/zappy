@@ -25,7 +25,7 @@ pub enum Command {
     NewCommand,
 }
 
-/// `--__ZAPPY_PROJECT_NAME__` `greet` command args.
+/// `__ZAPPY_PROJECT_NAME__` `greet` command args.
 #[derive(Debug, Args, Clone)]
 pub struct GreetArgs {
     /// Your name.
