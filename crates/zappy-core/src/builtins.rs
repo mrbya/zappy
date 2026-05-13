@@ -2,7 +2,7 @@
 
 use indexmap::IndexMap;
 
-use crate::{apply_transform, TransformKind, VariableValueMap};
+use crate::{TransformKind, VariableValueMap, apply_transform};
 
 // Reserved variable names owned by Zappy.
 /// Project name variable name.
