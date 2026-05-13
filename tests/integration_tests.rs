@@ -373,7 +373,7 @@ fn template_rust_cli_generates() {
             "--template",
             "rust-cli",
             "--templates-dir",
-            "templates",
+            "crates/zappy-templates/templates",
             "--name",
             "my_tool",
             "--var",
@@ -401,7 +401,7 @@ fn template_cpp_cmake_app_generates() {
             "--template",
             "cpp-cmake-app",
             "--templates-dir",
-            "templates",
+            "crates/zappy-templates/templates",
             "--name",
             "my_tool",
             "--var",
@@ -415,4 +415,14 @@ fn template_cpp_cmake_app_generates() {
 
     assert!(project_dir.join("CMakeLists.txt").exists());
     assert!(project_dir.join("src/main.cpp").exists());
+}
+
+#[test]
+fn zappy_should_see_builtin_templates() {
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .arg("list")
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("rust-cli"));
 }
