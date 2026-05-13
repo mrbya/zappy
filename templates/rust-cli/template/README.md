@@ -10,7 +10,6 @@
 - [Development](#development)
   * [Prequisites](#prequisites)
   * [Getting started](#getting-started)
-  * [Getting started](#getting-started-1)
 - [Documentation](#documentation)
   * [Style](#style)
 - [License](#license)
@@ -54,8 +53,6 @@ Options:
 - Rust stable toolchain with `rustfmt` and `clippy` (`rust-toolchain.toml`)
 - Rust `1.85.0` or newer for workspace builds
 - [`just`](https://crates.io/crates/just)
-
-### Getting started
 
 For a first time setup, run:
 ```bash
