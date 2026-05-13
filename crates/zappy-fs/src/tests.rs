@@ -33,6 +33,7 @@ fn discovers_templates_from_explicit_directory() {
 
     let catalogue = discover_templates(&DiscoveryConfig {
         templates_dir: Some(templates_root.to_path_buf()),
+        bundled_templates_dir: None,
     })
     .expect("templates should be discovered");
 
@@ -63,6 +64,7 @@ language = "rust"
 
     let catalogue = discover_templates(&DiscoveryConfig {
         templates_dir: Some(temp_dir.path().to_path_buf()),
+        bundled_templates_dir: None,
     })
     .expect("template should be discovered");
 
@@ -76,6 +78,7 @@ fn missing_explicit_directory_is_an_error() {
 
     let err = discover_templates(&DiscoveryConfig {
         templates_dir: Some(missing),
+        bundled_templates_dir: None,
     })
     .expect_err("missing explicit directory should fail");
 

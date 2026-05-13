@@ -13,6 +13,9 @@ pub struct DiscoveryConfig {
     ///
     /// When set, discovery uses only this directory.
     pub templates_dir: Option<PathBuf>,
+
+    /// Directory containing bundled starter templates.
+    pub bundled_templates_dir: Option<PathBuf>,
 }
 
 /// Template search path source/type.
@@ -35,6 +38,9 @@ pub enum TemplateSearchPathKind {
 
     /// `templates/` under current working directory.
     CurrentWorkingDirectory,
+
+    /// Bundled `templates/` extracted from `zappy-tempaltes`.
+    Bundled,
 }
 
 /// A candidate template search path.
@@ -185,6 +191,14 @@ pub fn resolve_template_search_paths(
         paths.push(TemplateSearchPath {
             kind: TemplateSearchPathKind::CurrentWorkingDirectory,
             path: current_dir.join("templates"),
+            required: false,
+        });
+    }
+
+    if let Some(bundled_templates_dir) = config.bundled_templates_dir.as_ref() {
+        paths.push(TemplateSearchPath {
+            kind: TemplateSearchPathKind::Bundled,
+            path: bundled_templates_dir.clone(),
             required: false,
         });
     }
