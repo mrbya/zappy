@@ -1,0 +1,60 @@
+[template]
+id = "rust-cli"
+name = "Rust CLI"
+description = "Small Rust CLI application using clap."
+language = "rust"
+version = "0.1.0"
+
+[template.source]
+root = "template"
+
+[variables]
+description = {
+    required = true,
+    default = "A small Rust CLI application.",
+    transforms = ["raw"],
+    placeholders = {
+        raw = "__DESCRIPTION__",
+    }
+}
+
+use_gitlab_ci = {
+    default = false,
+}
+
+use_github_actions = {
+    default = false,
+}
+
+[paths]
+exclude = [".git", ".DS_Store", "target"]
+binary_extensions = ["png", "jpg", "jpeg", "gif", "ico", "pdf", "zip"]
+binary_files = ["Cargo.lock"]
+
+[[conditionals]]
+path = "optional_file.txt"
+when = "include_optional"
+
+[[hooks.post_generate]]
+name = "Format Rust project"
+command = "cargo"
+args = ["fmt"]
+optional = true
+
+[validation]
+output_dir_name = "zappy-validation-rust-cli"
+variables = {
+    description = "Generated test CLI",
+    use_gitlab_ci = false,
+    use_github_actions = false,
+}
+
+[[validation.steps]]
+name = "cargo clippy"
+command = "cargo"
+args = ["clippy", "--", "-D", "warnings"]
+
+[[validation.steps]]
+name = "cargo test"
+command = "cargo"
+args = ["test"]
