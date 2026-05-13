@@ -76,6 +76,10 @@ audit *FLAGS:
 unused *FLAGS:
     cargo +nightly udeps --all-targets --workspace
 
+# Validates bundled templates.
+test-templates:
+    @just run -- validate -t rust-cli
+
 # Check formatting and linter checks, check for unused dependencies and audits for vulnerabilities.
 thorough-check:
     @just fmt --check
@@ -108,6 +112,10 @@ install-hooks:
 # Builds and installs dkb-lsp binary.
 install:
     cargo install --path .
+
+# Install pre-commit hooks.
+pre-commit-install:
+    pre-commit install
 
 docker-build:
     #!/usr/bin/env bash

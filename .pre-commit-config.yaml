@@ -29,7 +29,7 @@ repos:
         entry: just ci
         pass_filenames: false
         files: >
-          (?x)^(
+          (?x)^(?!templates/)(
             .*\.(rs|toml)|
             justfile
           )$
@@ -39,4 +39,11 @@ repos:
         language: unsupported
         entry: just index
         pass_filenames: false
-        files: .*README.md
+        files: README.md
+
+      - id: templates
+        name: validate bundled templates
+        language: unsupported
+        entry: just test-templates
+        pass_filenames: false
+        files: ^templates/
