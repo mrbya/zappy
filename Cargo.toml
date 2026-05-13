@@ -6,6 +6,7 @@ members = [
     "crates/zappy-core",
     "crates/zappy-fs",
     "crates/zappy-hooks",
+    "crates/zappy-templates",
 ]
 resolver = "2"
 
@@ -19,7 +20,7 @@ repository              = "https://gitlab.com/byacrates/zappy.git"
 license                 = "MIT OR Apache-2.0"
 keywords                = ["zappy", "templates", "scaffolding"]
 categories              = ["command-line-utilities"]
-version                 = "0.0.1-pre"
+version                 = "0.1.0"
 
 [package]
 name                    = "zappy"
@@ -42,6 +43,7 @@ zappy-cli               = { path = "crates/zappy-cli" }
 zappy-core              = { path = "crates/zappy-core" }
 zappy-fs                = { path = "crates/zappy-fs" }
 zappy-hooks             = { path = "crates/zappy-hooks" }
+zappy-templates         = { path = "crates/zappy-templates" }
 # Other workspace deps
 clap                    = { version = "4", features = ["derive"] }
 camino                  = { version = "1", features = ["serde1"] }
@@ -55,6 +57,7 @@ assert_cmd              = { version = "2" }
 predicates              = { version = "3" }
 heck                    = { version = "0.5" }
 time                    = { version = "0.3", features = ["local-offset"] }
+include_dir             = { version = "0.7" }
 
 [dependencies]
 zappy-cli.workspace = true
@@ -85,7 +88,8 @@ normal = [
     "zappy-cli",
     "zappy-core",
     "zappy-fs",
-    "zappy-hooks"
+    "zappy-hooks",
+    "zappy-templates"
 ]
 development = ["criterion", "pretty_assertions"]
 

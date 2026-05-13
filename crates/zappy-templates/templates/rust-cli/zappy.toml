@@ -1,0 +1,88 @@
+[template]
+id = "rust-cli"
+name = "Rust CLI"
+description = "Small Rust CLI application using clap."
+language = "rust"
+version = "0.1.0"
+
+[template.source]
+root = "template"
+
+[variables]
+description = {
+    required = true,
+    default = "TODO: add project description",
+    placeholders = {
+        raw = "__DESCRIPTION__",
+    }
+}
+
+repo = {
+    required = true,
+    default = "TODO: add project repo",
+    placeholders = {
+        raw = "__REPO__",
+    }
+}
+
+use_gitlab_ci = {
+    default = false,
+}
+
+gitlab_image_registry = {
+    default = "{TODO: add gitlab image registry}",
+    placeholders = {
+        raw = "__GITLAB_IMAGE_REGISTRY__",
+    }
+}
+
+use_github_actions = {
+    default = false,
+}
+
+[paths]
+exclude = [".git", ".DS_Store", "target"]
+binary_extensions = ["png", "jpg", "jpeg", "gif", "ico", "pdf", "zip"]
+binary_files = ["Cargo.lock"]
+
+[[conditionals]]
+path = ".gitlab-ci.yml"
+when = "use_gitlab_ci"
+
+[[conditionals]]
+path = "Dockerfile"
+when = "use_gitlab_ci"
+
+[[conditionals]]
+path = ".github/workflows/ci.yml"
+when = "use_github_actions"
+
+[[hooks.post_generate]]
+name = "Format Rust project"
+command = "cargo"
+args = ["fmt"]
+optional = true
+
+[validation]
+output_dir_name = "zappy-validation-rust-cli"
+variables = {
+    description = "Generated test CLI",
+    repo = "https://github.com/brucelee/nope.git",
+    use_gitlab_ci = false,
+    use_github_actions = false,
+}
+
+[[validation.setup]]
+name = "install just"
+command = "sh"
+args = ["-c", "just -V || cargo install just"]
+
+[[validation.setup]]
+name = "bootstrap recipe"
+command = "just"
+args = ["init"]
+
+[[validation.steps]]
+name = "lint checks, audit, udeps and tests"
+command = "just"
+args = ["ci"]

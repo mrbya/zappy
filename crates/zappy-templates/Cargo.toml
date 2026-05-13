@@ -1,5 +1,5 @@
 [package]
-name = "zappy-fs"
+name = "zappy-templates"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -10,16 +10,15 @@ license.workspace = true
 keywords.workspace = true
 categories.workspace = true
 
-description = "Zappy - Safe filesystem ops"
+description = "Zappy - Bundled project templates"
 
 [dependencies]
 zappy-core.workspace = true
-directories.workspace = true
 thiserror.workspace = true
-heck.workspace = true
+directories.workspace = true
+include_dir.workspace = true
 
 [dev-dependencies]
-tempfile.workspace = true
 
 [package.metadata.cargo-udeps.ignore]
 normal = [
@@ -32,3 +31,4 @@ normal = [
     "zappy-templates"
 ]
 development = ["criterion", "pretty_assertions"]
+

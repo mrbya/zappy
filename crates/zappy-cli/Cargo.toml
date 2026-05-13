@@ -1,6 +1,6 @@
 [package]
 name = "zappy-cli"
-version = "0.0.1"
+version.workspace = true
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -16,6 +16,7 @@ description = "Zappy - Clap CLI, prompts, logging, UX"
 zappy-core.workspace = true
 zappy-fs.workspace = true
 zappy-hooks.workspace = true
+zappy-templates.workspace = true
 clap.workspace = true
 serde.workspace = true
 tempfile.workspace = true
@@ -30,6 +31,7 @@ normal = [
     "zappy-cli",
     "zappy-core",
     "zappy-fs",
-    "zappy-hooks"
+    "zappy-hooks",
+    "zappy-templates"
 ]
 development = ["criterion", "pretty_assertions"]
