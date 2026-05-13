@@ -54,6 +54,7 @@ tempfile                = { version = "3" }
 assert_cmd              = { version = "2" }
 predicates              = { version = "3" }
 heck                    = { version = "0.5" }
+time                    = { version = "0.3", features = ["local-offset"] }
 
 [dependencies]
 zappy-cli.workspace = true

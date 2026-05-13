@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
+use std::process::Command as OsCommand;
 
-use zappy_core::builtins::PROJECT_NAME;
+use zappy_core::builtins::{DATE, DAY, EMAIL, MONTH, PROJECT_NAME, USER, YEAR};
 use zappy_core::hooks::HookSpec;
 use zappy_core::{GenerationPlan, ResolvedVariables, VariableValue, VariableValueMap};
 use zappy_fs::{
@@ -123,16 +124,122 @@ pub(super) fn create_template_skeleton(input: &InitTemplateInput) -> Result<(), 
     }
 }
 
+/// Date helper struct.
+#[derive(Debug, Clone)]
+struct DateParts {
+    /// Full date.
+    date: String,
+
+    /// Day slice of the date.
+    day: String,
+
+    /// Month slice of the date.
+    month: String,
+
+    /// Year slice of the date.
+    year: String,
+}
+
+impl DateParts {
+    /// Constructs date.
+    #[must_use]
+    pub fn new() -> Self {
+        let now =
+            time::OffsetDateTime::now_local().unwrap_or_else(|_| time::OffsetDateTime::now_utc());
+
+        let year = now.year();
+        let month = now.month();
+        let day = now.day();
+
+        Self {
+            date: format!("{year:04}-{month:02}-{day:02}"),
+            day: format!("{day:02}"),
+            month: format!("{month:02}"),
+            year: format!("{year:04}"),
+        }
+    }
+}
+
 /// Constructs command built-in variables.
 pub(super) fn command_builtins(project_name: String) -> VariableValueMap {
     let mut builtins = VariableValueMap::new();
+
+    let date = DateParts::new();
+    let user = user_name();
+    let email = user_email();
 
     builtins.insert(
         String::from(PROJECT_NAME),
         VariableValue::String(project_name),
     );
+    builtins.insert(String::from(USER), VariableValue::String(user));
+    builtins.insert(String::from(EMAIL), VariableValue::String(email));
+    builtins.insert(String::from(DATE), VariableValue::String(date.date));
+    builtins.insert(String::from(DAY), VariableValue::String(date.day));
+    builtins.insert(String::from(MONTH), VariableValue::String(date.month));
+    builtins.insert(String::from(YEAR), VariableValue::String(date.year));
 
     builtins
+}
+
+/// Retrieves host username.
+fn user_name() -> String {
+    git_user_name()
+        .or_else(env_user)
+        .unwrap_or_else(|| String::from("{TODO: add username}"))
+}
+
+/// Retrieves git username.
+fn git_user_name() -> Option<String> {
+    let output = OsCommand::new("git")
+        .args(["config", "user.name"])
+        .output()
+        .ok()?;
+
+    if !output.status.success() {
+        return None;
+    }
+
+    let value = String::from_utf8_lossy(&output.stdout).trim().to_owned();
+
+    if value.is_empty() {
+        return None;
+    }
+
+    Some(value)
+}
+
+/// Retrieves env username.
+fn env_user() -> Option<String> {
+    std::env::var("USER")
+        .or_else(|_| std::env::var("USERNAME"))
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+}
+
+/// Retrieves user email.
+fn user_email() -> String {
+    git_user_email().unwrap_or_else(|| String::from("{TODO: add user email}"))
+}
+
+/// Retrieves user git email.
+fn git_user_email() -> Option<String> {
+    let output = OsCommand::new("git")
+        .args(["config", "user.email"])
+        .output()
+        .ok()?;
+
+    if !output.status.success() {
+        return None;
+    }
+
+    let value = String::from_utf8_lossy(&output.stdout).trim().to_owned();
+
+    if value.is_empty() {
+        return None;
+    }
+
+    Some(value)
 }
 
 /// Execute hooks for a single command phase.
