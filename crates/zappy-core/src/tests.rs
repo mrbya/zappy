@@ -577,6 +577,320 @@ fn invalid_choice_fails() {
 }
 
 #[test]
+fn required_when_unknown_variable_fails() {
+    Manifest::from_toml_str(
+        r#"
+[template]
+id = "unknown-required-when-test"
+name = "Unknown required_when"
+
+[variables.use_test]
+default = true
+
+[variables.test_project_name]
+required_when = "unknown"
+prompt = "Project name"
+"#,
+        "zappy.toml",
+    )
+    .expect_err("should not parse with unknown required_when variable");
+}
+
+#[test]
+fn required_when_self_fails() {
+    Manifest::from_toml_str(
+        r#"
+[template]
+id = "required-when-self-test"
+name = "required_when self"
+
+[variables.use_test]
+default = true
+
+[variables.test_project_name]
+required_when = "test_project_name"
+prompt = "Project name"
+"#,
+        "zappy.toml",
+    )
+    .expect_err("should not parse with required_when=self");
+}
+
+#[test]
+fn required_when_false_allows_missing() {
+    let manifest = Manifest::from_toml_str(
+        r#"
+[template]
+id = "required-when"
+name = "Required when test"
+
+[variables.use_test]
+default = false
+
+[variables.test_project_name]
+required_when = "use_test"
+prompt = "Project name"
+"#,
+        "zappy.toml",
+    )
+    .expect("manifest should parse");
+
+    resolve_variables(&manifest.variables, &VariableResolutionInput::default())
+        .expect("missing conditionally required variable with required_when = false should pass");
+}
+
+#[test]
+fn required_when_true_rejects_missing() {
+    let manifest = Manifest::from_toml_str(
+        r#"
+[template]
+id = "required-when"
+name = "Required when test"
+
+[variables.use_test]
+default = true
+
+[variables.test_project_name]
+required_when = "use_test"
+prompt = "Project name"
+"#,
+        "zappy.toml",
+    )
+    .expect("manifest should parse");
+
+    let err = resolve_variables(&manifest.variables, &VariableResolutionInput::default())
+        .expect_err("missing conditionally required variable should fail");
+
+    assert!(err.to_string().contains("test_project_name"));
+}
+
+#[test]
+fn required_when_true_rejects_empty_string() {
+    let manifest = Manifest::from_toml_str(
+        r#"
+[template]
+id = "required-when"
+name = "Required when test"
+
+[variables.use_test]
+default = true
+
+[variables.test_project_name]
+required_when = "use_test"
+prompt = "Project name"
+"#,
+        "zappy.toml",
+    )
+    .expect("manifest should parse");
+
+    let mut input = VariableResolutionInput::default();
+    input.interactive.insert(
+        String::from("test_project_name"),
+        VariableValue::String(String::new()),
+    );
+
+    let err = resolve_variables(&manifest.variables, &input)
+        .expect_err("empty conditionally required variable should fail");
+
+    assert!(err.to_string().contains("test_project_name"));
+}
+
+#[test]
+fn required_when_true_accepts_value() {
+    let manifest = Manifest::from_toml_str(
+        r#"
+[template]
+id = "required-when"
+name = "Required when test"
+
+[variables.use_test]
+default = true
+
+[variables.test_project_name]
+required_when = "use_test"
+prompt = "Project name"
+"#,
+        "zappy.toml",
+    )
+    .expect("manifest should parse");
+
+    let mut input = VariableResolutionInput::default();
+    input.interactive.insert(
+        String::from("test_project_name"),
+        VariableValue::String(String::from("test_project")),
+    );
+
+    let resolved = resolve_variables(&manifest.variables, &input)
+        .expect("conditionally required variable should accept a value");
+
+    assert!(resolved.values.contains_key("test_project_name"));
+    assert_eq!(
+        resolved
+            .values
+            .get("test_project_name")
+            .expect("should contain test_project_name"),
+        &VariableValue::String(String::from("test_project"))
+    );
+}
+
+#[test]
+fn conflicts_with_uknown_fails() {
+    Manifest::from_toml_str(
+        r#"
+[template]
+id = "conflicts-with-uknown"
+name = "Conflcits with unknown"
+
+[variables.use_test1]
+default = false
+conflicts_with = ["unknown"]
+
+[variables.use_test2]
+default = false
+"#,
+        "zappy.toml",
+    )
+    .expect_err("should not parse with unknown conflicts_with variable");
+}
+
+#[test]
+fn conflicts_with_self_fails() {
+    Manifest::from_toml_str(
+        r#"
+[template]
+id = "conflicts-with-self"
+name = "Conflcits with self"
+
+[variables.use_test1]
+default = false
+conflicts_with = ["use_test1"]
+
+[variables.use_test2]
+default = false
+"#,
+        "zappy.toml",
+    )
+    .expect_err("should not parse with unknown conflicts_with variable");
+}
+
+fn assert_conflicts_with(resolved: &ResolvedVariables, exp1: bool, exp2: bool) {
+    assert!(resolved.values.contains_key("use_test1"));
+    assert!(resolved.values.contains_key("use_test2"));
+    assert_eq!(
+        resolved
+            .values
+            .get("use_test1")
+            .expect("should contain use_test1"),
+        &VariableValue::Bool(exp1)
+    );
+    assert_eq!(
+        resolved
+            .values
+            .get("use_test2")
+            .expect("should contain use_test2"),
+        &VariableValue::Bool(exp2)
+    );
+}
+
+#[test]
+fn conflicts_with_false_false_succeeds() {
+    let manifest = Manifest::from_toml_str(
+        r#"
+[template]
+id = "missing-test"
+name = "Missing Test"
+
+[variables.use_test1]
+default = false
+conflicts_with = ["use_test2"]
+
+[variables.use_test2]
+default = false
+"#,
+        "zappy.toml",
+    )
+    .expect("manifest should parse");
+
+    let resolved = resolve_variables(&manifest.variables, &VariableResolutionInput::default())
+        .expect("false false exclusive variables should pass");
+    assert_conflicts_with(&resolved, false, false);
+}
+
+#[test]
+fn conflicts_with_false_true_succeeds() {
+    let manifest = Manifest::from_toml_str(
+        r#"
+[template]
+id = "missing-test"
+name = "Missing Test"
+
+[variables.use_test1]
+default = false
+conflicts_with = ["use_test2"]
+
+[variables.use_test2]
+default = true
+"#,
+        "zappy.toml",
+    )
+    .expect("manifest should parse");
+
+    let resolved = resolve_variables(&manifest.variables, &VariableResolutionInput::default())
+        .expect("false true exclusive variables should pass");
+    assert_conflicts_with(&resolved, false, true);
+}
+
+#[test]
+fn conflicts_with_true_false_succeeds() {
+    let manifest = Manifest::from_toml_str(
+        r#"
+[template]
+id = "missing-test"
+name = "Missing Test"
+
+[variables.use_test1]
+default = true
+conflicts_with = ["use_test2"]
+
+[variables.use_test2]
+default = false
+"#,
+        "zappy.toml",
+    )
+    .expect("manifest should parse");
+
+    let resolved = resolve_variables(&manifest.variables, &VariableResolutionInput::default())
+        .expect("true false exclusive variables should pass");
+    assert_conflicts_with(&resolved, true, false);
+}
+
+#[test]
+fn conflicts_with_true_true_fails() {
+    let manifest = Manifest::from_toml_str(
+        r#"
+[template]
+id = "missing-test"
+name = "Missing Test"
+
+[variables.use_test1]
+default = true
+conflicts_with = ["use_test2"]
+
+[variables.use_test2]
+default = true
+"#,
+        "zappy.toml",
+    )
+    .expect("manifest should parse");
+
+    let err = resolve_variables(&manifest.variables, &VariableResolutionInput::default())
+        .expect_err("exclusive enabled variables should fail");
+
+    assert!(err.to_string().contains("use_test1"));
+    assert!(err.to_string().contains("use_test2"));
+}
+
+#[test]
 fn renders_text_placeholders() {
     let mut replacements = indexmap::IndexMap::new();
     replacements.insert(String::from("__NAME__"), String::from("my-tool"));
