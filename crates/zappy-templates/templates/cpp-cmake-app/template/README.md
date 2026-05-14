@@ -59,7 +59,13 @@ ninja
 ninja test
 ```
 
-4. Run app:
+4. Generate coverage report:
+```bash
+# inside build dir
+ninja cov
+```
+
+5. Run app:
 ```bash
 # inside build dir
 ninja run

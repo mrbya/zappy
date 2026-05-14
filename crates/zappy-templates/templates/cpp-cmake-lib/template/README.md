@@ -75,6 +75,12 @@ ninja
 ninja test
 ```
 
+4. Generate coverage report:
+```bash
+# inside build dir
+ninja cov
+```
+
 ## Documentation
 
 Generate documentation:

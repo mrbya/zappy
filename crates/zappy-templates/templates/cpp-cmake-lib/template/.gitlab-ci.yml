@@ -37,6 +37,7 @@ coverage:
   script:
     - cd build
     - ninja cov
+  coverage: '/^\s*lines\.+:\s*\d+(?:\.\d+)?%/'
   artifacts:
     paths:
       - build/coverage.info
