@@ -1,5 +1,6 @@
 use indexmap::IndexMap;
 
+use crate::condition::evaluate_condition;
 use crate::transform::apply_transform;
 use crate::variables::{VariableMap, VariableValueMap};
 use crate::{CoreError, CoreResult, TransformKind, VariableSpec, VariableValue};
@@ -73,37 +74,12 @@ pub fn resolve_variables(
     validate_known_variables(variables, "interactive values", &input.interactive)?;
     validate_known_variables(variables, "user defaults", &input.user_defaults)?;
 
-    let mut resolved_values = VariableValueMap::new();
-    let mut transformed_values = IndexMap::new();
-    let mut replacements = IndexMap::new();
+    let mut resolved_values = resolve_declared_values(variables, input)?;
 
-    for (name, spec) in variables {
-        let value = resolve_single_variable(name, spec, input)?;
+    validate_required_when(variables, &resolved_values)?;
+    validate_conflicts(variables, &resolved_values)?;
 
-        let Some(value) = value else {
-            continue;
-        };
-
-        validate_choices(name, &value, &spec.choices)?;
-
-        let transforms = required_transforms(spec);
-
-        let mut transformed_for_variable = IndexMap::new();
-
-        for transform in transforms {
-            let rendered = apply_transform(&value, transform);
-            transformed_for_variable.insert(transform, rendered);
-        }
-
-        for (transform, placeholder) in &spec.placeholders {
-            if let Some(rendered) = transformed_for_variable.get(transform) {
-                replacements.insert(placeholder.clone(), rendered.clone());
-            }
-        }
-
-        resolved_values.insert(name.clone(), value);
-        transformed_values.insert(name.clone(), transformed_for_variable);
-    }
+    let (mut transformed_values, mut replacements) = build_render_data(variables, &resolved_values);
 
     inject_builtins(
         &input.builtins,
@@ -117,6 +93,63 @@ pub fn resolve_variables(
         transformations: transformed_values,
         replacements,
     })
+}
+
+/// Resolves declared variable values.
+fn resolve_declared_values(
+    variables: &VariableMap,
+    input: &VariableResolutionInput,
+) -> CoreResult<VariableValueMap> {
+    let mut resolved_values = VariableValueMap::new();
+
+    for (name, spec) in variables {
+        let value = resolve_single_variable(name, spec, input)?;
+
+        let Some(value) = value else {
+            continue;
+        };
+
+        validate_choices(name, &value, &spec.choices)?;
+        resolved_values.insert(name.clone(), value);
+    }
+
+    Ok(resolved_values)
+}
+
+/// Builds render data for all resolved variables.
+fn build_render_data(
+    variables: &VariableMap,
+    resolved_values: &VariableValueMap,
+) -> (
+    IndexMap<String, IndexMap<TransformKind, String>>,
+    IndexMap<String, String>,
+) {
+    let mut transformed_values = IndexMap::new();
+    let mut replacements = IndexMap::new();
+
+    for (name, value) in resolved_values {
+        let Some(spec) = variables.get(name) else {
+            continue;
+        };
+
+        let transforms = required_transforms(spec);
+        let mut transformed_for_variable = IndexMap::new();
+
+        for transform in transforms {
+            let rendered = apply_transform(value, transform);
+            transformed_for_variable.insert(transform, rendered);
+        }
+
+        for (transform, placeholder) in &spec.placeholders {
+            if let Some(rendered) = transformed_for_variable.get(transform) {
+                replacements.insert(placeholder.clone(), rendered.clone());
+            }
+        }
+
+        transformed_values.insert(name.clone(), transformed_for_variable);
+    }
+
+    (transformed_values, replacements)
 }
 
 /// Resolves a single variable according to source precedence.
@@ -152,6 +185,62 @@ fn resolve_single_variable(
     }
 
     Ok(None)
+}
+
+/// Validates `required_when` conditions for resolved variables.
+fn validate_required_when(variables: &VariableMap, values: &VariableValueMap) -> CoreResult<()> {
+    for (name, spec) in variables {
+        let Some(condition) = spec.required_when.as_deref() else {
+            continue;
+        };
+
+        if !evaluate_condition(condition, values) {
+            continue;
+        }
+
+        if !is_present(values.get(name).cloned()) {
+            return Err(CoreError::ConditionallyRequiredVariable {
+                name: name.to_owned(),
+                when: String::from(condition),
+            });
+        }
+    }
+
+    Ok(())
+}
+
+/// Checks whether a variable value is present.
+fn is_present(value: Option<VariableValue>) -> bool {
+    match value {
+        Some(VariableValue::String(value)) => !value.trim().is_empty(),
+        Some(VariableValue::Bool(_) | VariableValue::Integer(_)) => true,
+        None => false,
+    }
+}
+
+/// Validates variable conflicts.
+fn validate_conflicts(variables: &VariableMap, values: &VariableValueMap) -> CoreResult<()> {
+    for (name, spec) in variables {
+        if !is_enabled(values.get(name)) {
+            continue;
+        }
+
+        for conflict in &spec.conflicts_with {
+            if is_enabled(values.get(conflict)) {
+                return Err(CoreError::ConflictingVariables {
+                    left: name.clone(),
+                    right: conflict.clone(),
+                });
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Checks whether variable is enabled.
+const fn is_enabled(value: Option<&VariableValue>) -> bool {
+    matches!(value, Some(VariableValue::Bool(true)))
 }
 
 /// Validates builtin variables.

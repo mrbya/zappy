@@ -91,6 +91,16 @@ pub enum CoreError {
         name: String,
     },
 
+    /// Conditonally required variabe not provided.
+    #[error("variable `{name}` required when `{when}` was not provided.")]
+    ConditionallyRequiredVariable {
+        /// Variable name.
+        name: String,
+
+        /// Required condition.
+        when: String,
+    },
+
     /// `conflicts_with` variable not found in the manifest.
     #[error("chosen conflicting variable for `{name}`: `{conflict}` not found in manifest")]
     InvalidConflictsWith {
@@ -106,6 +116,16 @@ pub enum CoreError {
     ConflictsWithSelf {
         /// Variable name.
         name: String,
+    },
+
+    /// Conflicting variables.
+    #[error("variables `{left}` and `{right}` are in conflict")]
+    ConflictingVariables {
+        /// Variable 1 name.
+        left: String,
+
+        /// Variable 2 name.
+        right: String,
     },
 
     /// Variable name reserved by a built-in variable.
