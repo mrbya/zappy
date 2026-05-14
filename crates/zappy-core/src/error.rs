@@ -74,6 +74,40 @@ pub enum CoreError {
         choices: String,
     },
 
+    /// Required when variable not found in the manifest.
+    #[error("chosen `required_when` variable for `{name}`: `{when}` was not found in manifest")]
+    InvalidRequiredWhen {
+        /// Variable name.
+        name: String,
+
+        /// Required when choice.
+        when: String,
+    },
+
+    /// Variable requires self throug `required_when`.
+    #[error("variable `{name}` cannot define itself in `required_when`")]
+    RequireSelf {
+        /// Variable name.
+        name: String,
+    },
+
+    /// `conflicts_with` variable not found in the manifest.
+    #[error("chosen conflicting variable for `{name}`: `{conflict}` not found in manifest")]
+    InvalidConflictsWith {
+        /// Variable name.
+        name: String,
+
+        /// Conflicting variable choice.
+        conflict: String,
+    },
+
+    /// Variable defines self in `conflicts_with`.
+    #[error("variable `{name}` cannot define itself in `conflicts_with`")]
+    ConflictsWithSelf {
+        /// Variable name.
+        name: String,
+    },
+
     /// Variable name reserved by a built-in variable.
     #[error("[variable.{name}] is invalid because `{name}` is a reserved built-in variable")]
     ReservedVariableName {

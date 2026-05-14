@@ -24,6 +24,14 @@ pub struct VariableSpec {
     /// Is the variable required?
     pub required: bool,
 
+    /// Variable required when other boolean variable provided.
+    pub required_when: Option<String>,
+
+    /// Other variable name this var conflicts with.
+    ///
+    /// e.g. `use_pnpm` and `use_yarn` in a js/ts project template
+    pub conflicts_with: Vec<String>,
+
     /// List of choiches for the variable.
     pub choices: Vec<VariableValue>,
 
@@ -131,6 +139,14 @@ pub(crate) struct RawVariableSpec {
     #[serde(default)]
     pub required: bool,
 
+    /// Raw variable `required_when` slug.
+    #[serde(default)]
+    pub required_when: Option<String>,
+
+    /// Raw `conflicts_with` variable slugs.
+    #[serde(default)]
+    pub conflicts_with: Vec<String>,
+
     /// Variable choice slugs.
     #[serde(default)]
     pub choices: Vec<VariableValue>,
@@ -173,6 +189,42 @@ impl RawVariableSpec {
             validated.insert(name, spec);
         }
 
+        for (name, spec) in &validated {
+            if let Some(var) = spec.required_when.as_ref() {
+                validate_variable_name(var)?;
+
+                if name == var {
+                    return Err(CoreError::RequireSelf {
+                        name: name.to_owned(),
+                    });
+                }
+
+                if !validated.contains_key(var) {
+                    return Err(CoreError::InvalidRequiredWhen {
+                        name: name.to_owned(),
+                        when: var.to_owned(),
+                    });
+                }
+            }
+
+            for var in &spec.conflicts_with {
+                validate_variable_name(var)?;
+
+                if name == var {
+                    return Err(CoreError::ConflictsWithSelf {
+                        name: name.to_owned(),
+                    });
+                }
+
+                if !validated.contains_key(var) {
+                    return Err(CoreError::InvalidConflictsWith {
+                        name: name.to_owned(),
+                        conflict: var.to_owned(),
+                    });
+                }
+            }
+        }
+
         Ok(validated)
     }
 }
@@ -199,7 +251,10 @@ impl TryFrom<RawVariableSpec> for VariableSpec {
             ));
         }
 
-        if raw.required && raw.default.is_none() && raw.prompt.is_none() {
+        if (raw.required || raw.required_when.is_some())
+            && raw.default.is_none()
+            && raw.prompt.is_none()
+        {
             return Err(CoreError::invalid_manifest(
                 "required variable without a default value should define a prompt",
             ));
@@ -209,6 +264,8 @@ impl TryFrom<RawVariableSpec> for VariableSpec {
             prompt: raw.prompt,
             default: raw.default,
             required: raw.required,
+            required_when: raw.required_when,
+            conflicts_with: raw.conflicts_with,
             choices: raw.choices,
             validation_regex: raw.validation_regex,
             transforms: raw.transforms,
