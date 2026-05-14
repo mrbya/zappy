@@ -64,7 +64,7 @@ args = ["fmt"]
 optional = true
 
 [validation]
-output_dir_name = "zappy-validation-rust-cli"
+output_dir_name = "zappy-rust-cli"
 variables = {
     description = "Generated test CLI",
     repo = "https://github.com/brucelee/nope.git",
