@@ -20,6 +20,17 @@ description = {
     }
 }
 
+use_gitlab_ci = {
+    default = false,
+}
+
+gitlab_image_registry = {
+    default = "{TODO: add gitlab image registry}",
+    placeholders = {
+        raw = "__GITLAB_IMAGE_REGISTRY__",
+    }
+}
+
 # Template file path config.
 [paths]
 exclude = [".git", ".DS_Store", "build"]
@@ -32,12 +43,17 @@ binary_files = [
     "gtestsetup/README.md"
 ]
 
-# Template generation hooks
-[hooks]
+[[conditionals]]
+path = ".gitlab-ci.yml"
+when = "use_gitlab_ci"
+
+[[conditionals]]
+path = "Dockerfile"
+when = "use_gitlab_ci"
 
 # Template validation config.
 [validation]
-output_dir_name = "zappy-validation-cpp-cmake-app"
+output_dir_name = "zappy-cpp-cmake-app"
 variables = {
     description = "Generated C++ CMake app",
 }

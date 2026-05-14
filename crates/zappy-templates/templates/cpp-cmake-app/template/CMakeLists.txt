@@ -8,11 +8,11 @@ project(__ZAPPY_PROJECT_NAME_SNAKE__)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 #####################################################################################
-# app sources & includes setup
+# App includes & sources setup
 #####################################################################################
 
 set(prjIncludes include)
-file(GLOB prjSrcs ${CMAKE_SOURCE_DIR}/src/*.cpp)
+file(GLOB prjSrcs ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 
 #####################################################################################
 # Executable setup
@@ -45,6 +45,6 @@ add_custom_target(
 
 add_custom_target(
     docs
-    COMMAND sphinx-build -b html ${CMAKE_SOURCE_DIR}/docs ${CMAKE_SOURCE_DIR}/public
+    COMMAND sphinx-build -b html ${CMAKE_CURRENT_SOURCE_DIR}/docs ${CMAKE_CURRENT_SOURCE_DIR}/public
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
