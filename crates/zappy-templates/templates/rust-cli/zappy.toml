@@ -34,7 +34,7 @@ use_github_actions = {
 }
 
 gitlab_image_registry = {
-    default = "{TODO: add gitlab image registry}",
+    prompt = "Gitlab image registry",
     required_when = "use_gitlab_ci",
     placeholders = {
         raw = "__GITLAB_IMAGE_REGISTRY__",
