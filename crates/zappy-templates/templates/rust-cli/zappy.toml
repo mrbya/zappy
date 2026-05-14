@@ -11,7 +11,7 @@ root = "template"
 [variables]
 description = {
     required = true,
-    default = "TODO: add project description",
+    default = "{TODO: add project description}",
     placeholders = {
         raw = "__DESCRIPTION__",
     }
@@ -19,7 +19,7 @@ description = {
 
 repo = {
     required = true,
-    default = "TODO: add project repo",
+    default = "{TODO: add project repo}",
     placeholders = {
         raw = "__REPO__",
     }
@@ -29,15 +29,16 @@ use_gitlab_ci = {
     default = false,
 }
 
+use_github_actions = {
+    default = false,
+}
+
 gitlab_image_registry = {
     default = "{TODO: add gitlab image registry}",
+    required_when = "use_gitlab_ci",
     placeholders = {
         raw = "__GITLAB_IMAGE_REGISTRY__",
     }
-}
-
-use_github_actions = {
-    default = false,
 }
 
 [paths]
