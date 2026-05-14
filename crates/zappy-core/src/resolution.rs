@@ -198,7 +198,7 @@ fn validate_required_when(variables: &VariableMap, values: &VariableValueMap) ->
             continue;
         }
 
-        if !is_present(values.get(name).cloned()) {
+        if !is_present(values.get(name)) {
             return Err(CoreError::ConditionallyRequiredVariable {
                 name: name.to_owned(),
                 when: String::from(condition),
@@ -210,12 +210,11 @@ fn validate_required_when(variables: &VariableMap, values: &VariableValueMap) ->
 }
 
 /// Checks whether a variable value is present.
-fn is_present(value: Option<VariableValue>) -> bool {
-    match value {
-        Some(VariableValue::String(value)) => !value.trim().is_empty(),
-        Some(VariableValue::Bool(_) | VariableValue::Integer(_)) => true,
-        None => false,
-    }
+fn is_present(value: Option<&VariableValue>) -> bool {
+    value.is_some_and(|value| match *value {
+        VariableValue::String(ref value) => !value.trim().is_empty(),
+        VariableValue::Bool(_) | VariableValue::Integer(_) => true,
+    })
 }
 
 /// Validates variable conflicts.

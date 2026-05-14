@@ -92,7 +92,7 @@ pub enum CoreError {
     },
 
     /// Conditonally required variabe not provided.
-    #[error("variable `{name}` required when `{when}` was not provided.")]
+    #[error("variable `{name}` is required when `{when}` is enabled")]
     ConditionallyRequiredVariable {
         /// Variable name.
         name: String,
@@ -119,7 +119,7 @@ pub enum CoreError {
     },
 
     /// Conflicting variables.
-    #[error("variables `{left}` and `{right}` are in conflict")]
+    #[error("variables `{left}` and `{right}` cannot be both enabled")]
     ConflictingVariables {
         /// Variable 1 name.
         left: String,
