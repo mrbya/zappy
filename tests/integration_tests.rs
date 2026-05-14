@@ -418,6 +418,33 @@ fn template_cpp_cmake_app_generates() {
 }
 
 #[test]
+fn template_cpp_cmake_lib_generates() {
+    let output = tempfile::TempDir::new().expect("output tempdir should be created");
+    let project_dir = output.path().join("my-tool");
+
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args([
+            "new",
+            "--template",
+            "cpp-cmake-lib",
+            "--templates-dir",
+            "crates/zappy-templates/templates",
+            "--name",
+            "my-tool",
+            "--var",
+            "description=\"My generated tool\"",
+            "--output",
+        ])
+        .arg(&project_dir)
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("Generated `cpp-cmake-lib`"));
+
+    assert!(project_dir.join("CMakeLists.txt").exists());
+}
+
+#[test]
 fn zappy_should_see_builtin_templates() {
     assert_cmd::Command::cargo_bin("zappy")
         .expect("zappy binary should exist")
