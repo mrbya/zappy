@@ -734,11 +734,11 @@ prompt = "Project name"
 }
 
 #[test]
-fn conflicts_with_uknown_fails() {
+fn conflicts_with_unknown_fails() {
     Manifest::from_toml_str(
         r#"
 [template]
-id = "conflicts-with-uknown"
+id = "conflicts-with-unknown"
 name = "Conflcits with unknown"
 
 [variables.use_test1]
