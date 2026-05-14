@@ -76,10 +76,15 @@ audit *FLAGS:
 unused *FLAGS:
     cargo +nightly udeps --all-targets --workspace
 
+# Validates a template:
+test-template TEMPLATE:
+    @just run -- validate -i crates/zappy-templates/templates -t {{TEMPLATE}}
+
 # Validates bundled templates.
 test-templates:
-    @just run -- validate -t rust-cli
-    @just run -- validate -t cpp-cmake-app
+    @just test-template rust-cli
+    @just test-template cpp-cmake-app
+    @just test-template cpp-cmake-lib
 
 # Check formatting and linter checks, check for unused dependencies and audits for vulnerabilities.
 thorough-check:
