@@ -7,7 +7,7 @@
 #include <random>
 #include <string>
 
-#include <__ZAPPY_PROJECT_NAME_SNAKE__.hpp>
+#include <__ZAPPY_PROJECT_NAME_KEBAB__.hpp>
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
@@ -25,7 +25,7 @@ public:
         return distrib(gen);
     }
 
-    std::string generate_random_string(size_t len) {
+    std::string genRandomString(size_t len) {
         const std::string characters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
         std::uniform_int_distribution<> distrib(0, characters.size() - 1);
 

@@ -7,6 +7,7 @@
 - [Features](#features)
 - [Requirements](#requirements)
 - [Usage](#usage)
+  * [Examples](#examples)
 - [Development](#development)
   * [Prequisites](#prequisites)
   * [Getting started](#getting-started)
@@ -31,6 +32,21 @@ ___
 
 TBD
 
+### Examples
+
+1. Configure and build library with examples.
+```bash
+# from lib root
+mkdir build && cd build
+cmake .. -GNinja -D__ZAPPY_PROJECT_NAME_SCREAMING___BUILD_EXAMPLES=ON
+ninja
+```
+
+2. Run examples:
+```bash
+# inside build dir
+ninja run_examples
+```
 ---
 
 ## Development

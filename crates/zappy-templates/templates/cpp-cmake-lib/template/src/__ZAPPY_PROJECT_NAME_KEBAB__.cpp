@@ -1,4 +1,4 @@
-#include <__ZAPPY_PROJECT_NAME_SNAKE__.hpp>
+#include <__ZAPPY_PROJECT_NAME_KEBAB__.hpp>
 
 using namespace __ZAPPY_PROJECT_NAME_SNAKE__;
 
