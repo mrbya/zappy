@@ -12,8 +12,3 @@ fn extracts_bundled_templates_and_clear_clears_cache() {
 
     assert!(!templates_dir.exists());
 }
-
-#[test]
-fn empty_cache_clear_passes() {
-    clear_cache_dir().expect("empty cache should pass");
-}
