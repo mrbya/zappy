@@ -4,125 +4,74 @@
 //! filesystem directory so the normal `zappy-fs` discovery pipeline can use
 //! them unchanged.
 
-use std::fs;
-use std::path::{Path, PathBuf};
+#![allow(clippy::module_name_repetitions)]
+// clippy WARN level lints
+#![warn(
+    missing_docs,
+    //clippy::cargo,
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::dbg_macro,
+    clippy::unwrap_used,
+    clippy::integer_division,
+    clippy::large_include_file,
+    clippy::map_err_ignore,
+    clippy::missing_docs_in_private_items,
+    clippy::panic,
+    clippy::todo,
+    clippy::undocumented_unsafe_blocks,
+    clippy::unimplemented,
+    clippy::unreachable
+)]
+// clippy WARN level lints, that can be upgraded to DENY if preferred
+#![warn(
+    clippy::float_arithmetic,
+    clippy::arithmetic_side_effects,
+    clippy::modulo_arithmetic,
+    clippy::as_conversions,
+    clippy::clone_on_ref_ptr,
+    clippy::create_dir,
+    clippy::default_union_representation,
+    clippy::deref_by_slicing,
+    clippy::empty_drop,
+    clippy::empty_structs_with_brackets,
+    clippy::exit,
+    clippy::filetype_is_file,
+    clippy::float_cmp_const,
+    clippy::if_then_some_else_none,
+    clippy::indexing_slicing,
+    clippy::let_underscore_must_use,
+    clippy::lossy_float_literal,
+    clippy::pattern_type_mismatch,
+    clippy::string_slice,
+    clippy::try_err
+)]
+// clippy DENY level lints, they always have a quick fix that should be preferred
+#![deny(
+    clippy::wildcard_imports,
+    clippy::multiple_inherent_impl,
+    clippy::rc_buffer,
+    clippy::rc_mutex,
+    clippy::rest_pat_in_fully_bound_structs,
+    clippy::same_name_method,
+    clippy::self_named_module_files,
+    clippy::shadow_unrelated,
+    clippy::str_to_string,
+    clippy::string_add,
+    clippy::implicit_clone,
+    clippy::unnecessary_self_imports,
+    clippy::unneeded_field_pattern,
+    clippy::unseparated_literal_suffix,
+    clippy::verbose_file_reads
+)]
 
-use include_dir::{Dir, DirEntry, include_dir};
-
-use crate::error::{TemplatesError, TemplatesResult};
-
+/// Template cache resolution and manipulation.
+pub mod cache;
 /// Bundled template errors.
 pub mod error;
 
-/// Embedded bundled templates directory.
-static BUNDLED_TEMPLATES: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/templates");
-
-/// Returns a real filesystem directory containing bundled templates.
-///
-/// The directory is recreated on each call to avoid stale bundled templates
-/// in local development builds.
-///
-/// # Errors
-/// Returns [`TemplatesError`] if:
-/// - the cache directory cannot be resolved
-/// - template files cannot be written
-pub fn ensure_bundled_templates_available() -> TemplatesResult<PathBuf> {
-    let templates_dir = resolve_cache_dir()?;
-
-    if templates_dir.exists() {
-        fs::remove_dir_all(&templates_dir).map_err(|source| {
-            Box::new(TemplatesError::ClearCache {
-                path: templates_dir.clone(),
-                source,
-            })
-        })?;
-    }
-
-    fs::create_dir_all(&templates_dir).map_err(|source| {
-        Box::new(TemplatesError::CreateDirectory {
-            path: templates_dir.clone(),
-            source,
-        })
-    })?;
-
-    extract_dir(&BUNDLED_TEMPLATES, &templates_dir)?;
-
-    Ok(templates_dir)
-}
-
-/// Clears bundled templates cache.
-///
-/// # Errors
-/// Returns [`TemplatesError::ClearCache`] if cache clear fails.
-pub fn clear_cache_dir() -> TemplatesResult<()> {
-    let templates_dir = resolve_cache_dir()?;
-
-    if templates_dir.exists() {
-        fs::remove_dir_all(&templates_dir).map_err(|source| {
-            Box::new(TemplatesError::ClearCache {
-                path: templates_dir,
-                source,
-            })
-        })?;
-    }
-
-    Ok(())
-}
-
-/// Resolves the bundled template cache directory.
-fn resolve_cache_dir() -> TemplatesResult<PathBuf> {
-    let Some(project_dirs) = directories::ProjectDirs::from("", "", "zappy") else {
-        return Err(Box::new(TemplatesError::ResolveCacheDirectory));
-    };
-
-    Ok(project_dirs
-        .cache_dir()
-        .join("bundled-templates")
-        .join(env!("CARGO_PKG_VERSION"))
-        .join("templates"))
-}
-
-/// Recursively extracts en embedded directory.
-fn extract_dir(dir: &Dir<'_>, destination_root: &Path) -> TemplatesResult<()> {
-    for entry in dir.entries() {
-        match entry {
-            DirEntry::Dir(child_dir) => {
-                let destination = destination_root.join(child_dir.path());
-
-                fs::create_dir_all(&destination).map_err(|source| {
-                    Box::new(TemplatesError::CreateDirectory {
-                        path: destination.clone(),
-                        source,
-                    })
-                })?;
-
-                extract_dir(child_dir, destination_root)?;
-            }
-
-            DirEntry::File(file) => {
-                let destination = destination_root.join(file.path());
-
-                if let Some(parent) = destination.parent() {
-                    fs::create_dir_all(parent).map_err(|source| {
-                        Box::new(TemplatesError::CreateDirectory {
-                            path: parent.to_path_buf(),
-                            source,
-                        })
-                    })?;
-                }
-
-                fs::write(&destination, file.contents()).map_err(|source| {
-                    Box::new(TemplatesError::WriteFile {
-                        path: destination,
-                        source,
-                    })
-                })?;
-            }
-        }
-    }
-
-    Ok(())
-}
+// Re-exports.
+pub use cache::{clear_cache_dir, ensure_bundled_templates_available, resolve_cache_dir};
 
 // Tests.
 #[cfg(test)]
