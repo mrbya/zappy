@@ -1,2 +1,0 @@
-#!/bin/bash
-LUA_PATH="./lua/?.lua;./lua/?/init.lua;./lua/lib/?.lua;;" lua bin/__ZAPPY_PROJECT_NAME_SNAKE__ "$@"

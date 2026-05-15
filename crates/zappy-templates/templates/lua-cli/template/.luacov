@@ -1,5 +1,6 @@
 return {
     modules = {
-        __ZAPPY_PROJECT_NAME_SNAKE__ = 'lua/zync/init.lua',
+        __ZAPPY_PROJECT_NAME_SNAKE__ = 'lua/__ZAPPY_PROJECT_NAME_SNAKE__/init.lua',
+        api = 'lua/__ZAPPY_PROJECT_NAME_SNAKE__/api.lua',
     },
 }

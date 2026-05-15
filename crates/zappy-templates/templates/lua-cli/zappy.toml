@@ -20,6 +20,14 @@ description = {
     }
 }
 
+repo = {
+    required = true,
+    default = "{TODO: add project repo}",
+    placeholders = {
+        raw = "__REPO__",
+    }
+}
+
 use_gitlab_ci = {
     default = false,
 }
@@ -40,25 +48,45 @@ binary_files = []
 
 # Conditional include paths.
 [[conditionals]]
-path = ".gitlab.ci-yml"
+path = ".gitlab-ci.yml"
+when = "use_gitlab_ci"
+
+[[conditionals]]
+path = "Dockerfile"
 when = "use_gitlab_ci"
 
 # Template generation hooks
-[hooks]
+[[hooks.post_generate]]
+name = "Format codebase"
+command = "stylua"
+args = ["."]
+optional = true
 
 # Template validation config.
-# [validation]
-# output_dir_name = "zappy-validation-luarock"
-# variables = {
-#     test_var = "validation test var value",
-#     include_optional = true,
-# }
+[validation]
+output_dir_name = "zappy-lua-cli"
+variables = {
+    description = "Generated test CLI",
+    repo = "https://github.com/brucelee/nope.git",
+    use_gitlab_ci = false,
+}
 
-# Validation setup hooks.
-# [[validation.setup]]
+# # Validation setup hooks.
+[[validation.setup]]
+name = "install just"
+command = "sh"
+args = ["-c", "just -V || cargo install just"]
+
+[[validation.setup]]
+name = "bootstrap recipe"
+command = "just"
+args = ["init"]
 
 # Validation process steps.
-# [[validation.steps]]
+[[validation.steps]]
+name = "checks and tests"
+command = "just"
+args = ["ci"]
 
 # Validation teardown hooks.
 # [[validation.teardown]]
