@@ -14,6 +14,14 @@ fn parses_verbosity_count() {
 }
 
 #[test]
+fn parses_clear_flag() {
+    let cli = Cli::try_parse_from(["zappy", "-c", "list"]).expect("clear flag should parse");
+
+    assert!(cli.clear);
+    assert!(matches!(cli.command, Command::List(_)));
+}
+
+#[test]
 fn parses_list_command() {
     let cli = Cli::try_parse_from([
         "zappy",
