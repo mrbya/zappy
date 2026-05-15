@@ -1,7 +1,7 @@
 [template]
 id = "rust-cli"
-name = "Rust CLI"
-description = "Small Rust CLI application using clap."
+name = "Rust CLI app"
+description = "Rust-based CLI application using clap."
 language = "rust"
 version = "0.1.0"
 
@@ -29,16 +29,16 @@ use_gitlab_ci = {
     default = false,
 }
 
-use_github_actions = {
-    default = false,
-}
-
 gitlab_image_registry = {
     prompt = "Gitlab image registry",
     required_when = "use_gitlab_ci",
     placeholders = {
         raw = "__GITLAB_IMAGE_REGISTRY__",
     }
+}
+
+use_github_actions = {
+    default = false,
 }
 
 [paths]

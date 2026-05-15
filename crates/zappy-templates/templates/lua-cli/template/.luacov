@@ -1,0 +1,5 @@
+return {
+    modules = {
+        __ZAPPY_PROJECT_NAME_SNAKE__ = 'lua/zync/init.lua',
+    },
+}
