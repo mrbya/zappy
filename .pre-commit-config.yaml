@@ -29,7 +29,7 @@ repos:
         entry: just ci
         pass_filenames: false
         files: >
-          (?x)^(?!templates/)(
+          (?x)^(?!crates/zappy-templates/templates/)(
             .*\.(rs|toml)|
             justfile
           )$

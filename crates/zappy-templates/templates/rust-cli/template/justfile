@@ -83,7 +83,7 @@ thorough-check:
     @just unused
     @just audit
 
-# Re indexes readme index.
+# Re-indexes readme index.
 index:
     markdown-toc -i README.md
 
@@ -96,7 +96,6 @@ pre-commit:
 
 # Similar to `pre-commit` command, but is not interactive and doesn't modify the codebase. Suitable for automated CI pipelines.
 ci:
-    @just fmt --check
     @just thorough-check
     @just doctest
     @just test-cov-ci
@@ -105,7 +104,7 @@ ci:
 install-hooks:
     pre-commit install
 
-# Builds and installs dkb-lsp binary.
+# Builds and installs __ZAPPY_PROJECT_NAME_KEBAB__ binary.
 install:
     cargo install --path .
 

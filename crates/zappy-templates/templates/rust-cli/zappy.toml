@@ -59,7 +59,7 @@ path = ".github/workflows/ci.yml"
 when = "use_github_actions"
 
 [[hooks.post_generate]]
-name = "Format Rust project"
+name = "Format codebase"
 command = "cargo"
 args = ["fmt"]
 optional = true
