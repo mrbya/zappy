@@ -1,6 +1,6 @@
 [package]
 name = "zappy-templates"
-version.workspace = true
+version = "0.1.0-b1"
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true

@@ -8,6 +8,9 @@ use crate::error::{TemplatesError, TemplatesResult};
 /// Embedded bundled templates directory.
 static BUNDLED_TEMPLATES: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/templates");
 
+/// Cache marker file name.
+const CACHE_MARKER: &str = ".zappy-templates-cache";
+
 /// Returns a real filesystem directory containing bundled templates.
 ///
 /// The directory is recreated on each call to avoid stale bundled templates
@@ -20,23 +23,11 @@ static BUNDLED_TEMPLATES: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/templates"
 pub fn ensure_bundled_templates_available() -> TemplatesResult<PathBuf> {
     let templates_dir = resolve_cache_dir()?;
 
-    if templates_dir.exists() {
-        fs::remove_dir_all(&templates_dir).map_err(|source| {
-            Box::new(TemplatesError::ClearCache {
-                path: templates_dir.clone(),
-                source,
-            })
-        })?;
+    if cache_is_ready(&templates_dir) {
+        return Ok(templates_dir);
     }
 
-    fs::create_dir_all(&templates_dir).map_err(|source| {
-        Box::new(TemplatesError::CreateDirectory {
-            path: templates_dir.clone(),
-            source,
-        })
-    })?;
-
-    extract_dir(&BUNDLED_TEMPLATES, &templates_dir)?;
+    install_bundled_templates(&templates_dir)?;
 
     Ok(templates_dir)
 }
@@ -58,6 +49,32 @@ pub fn clear_cache_dir() -> TemplatesResult<()> {
     }
 
     Ok(())
+}
+
+/// Installs bundled templates into template cache.
+fn install_bundled_templates(templates_dir: &Path) -> TemplatesResult<()> {
+    fs::create_dir_all(templates_dir).map_err(|source| {
+        Box::new(TemplatesError::CreateDirectory {
+            path: templates_dir.to_path_buf(),
+            source,
+        })
+    })?;
+
+    extract_dir(&BUNDLED_TEMPLATES, templates_dir)?;
+
+    fs::write(templates_dir.join(CACHE_MARKER), env!("CARGO_PKG_VERSION")).map_err(|source| {
+        Box::new(TemplatesError::WriteFile {
+            path: templates_dir.join(CACHE_MARKER),
+            source,
+        })
+    })?;
+
+    Ok(())
+}
+
+/// Checks whether the current cache is up to date and ready.
+fn cache_is_ready(templates_dir: &Path) -> bool {
+    templates_dir.join(CACHE_MARKER).is_file()
 }
 
 /// Resolves the bundled template cache directory.

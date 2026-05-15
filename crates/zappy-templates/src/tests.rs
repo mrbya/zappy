@@ -15,5 +15,5 @@ fn extracts_bundled_templates_and_clear_clears_cache() {
 
 #[test]
 fn empty_cache_clear_passes() {
-    clear_cache_dir().expect("empty cache should clear");
+    clear_cache_dir().expect("empty cache should pass");
 }

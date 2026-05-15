@@ -1405,7 +1405,7 @@ dependencies = [
 
 [[package]]
 name = "zappy-templates"
-version = "0.1.0"
+version = "0.1.0-b1"
 dependencies = [
  "directories",
  "include_dir",
