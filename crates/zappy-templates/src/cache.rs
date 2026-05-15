@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use include_dir::{include_dir, Dir, DirEntry};
+use include_dir::{Dir, DirEntry, include_dir};
 
 use crate::error::{TemplatesError, TemplatesResult};
 
@@ -64,7 +64,7 @@ pub fn clear_cache_dir() -> TemplatesResult<()> {
 ///
 /// # Errors
 /// Returns [`TemplatesError::ResolveCacheDirectory`] if fails to resolve cache dir.
-pub fn resolve_cache_dir() -> TemplatesResult<PathBuf> {
+fn resolve_cache_dir() -> TemplatesResult<PathBuf> {
     let Some(project_dirs) = directories::ProjectDirs::from("", "", "zappy") else {
         return Err(Box::new(TemplatesError::ResolveCacheDirectory));
     };
@@ -79,8 +79,8 @@ pub fn resolve_cache_dir() -> TemplatesResult<PathBuf> {
 /// Recursively extracts en embedded directory.
 fn extract_dir(dir: &Dir<'_>, destination_root: &Path) -> TemplatesResult<()> {
     for entry in dir.entries() {
-        match entry {
-            DirEntry::Dir(child_dir) => {
+        match *entry {
+            DirEntry::Dir(ref child_dir) => {
                 let destination = destination_root.join(child_dir.path());
 
                 fs::create_dir_all(&destination).map_err(|source| {
@@ -93,7 +93,7 @@ fn extract_dir(dir: &Dir<'_>, destination_root: &Path) -> TemplatesResult<()> {
                 extract_dir(child_dir, destination_root)?;
             }
 
-            DirEntry::File(file) => {
+            DirEntry::File(ref file) => {
                 let destination = destination_root.join(file.path());
 
                 if let Some(parent) = destination.parent() {

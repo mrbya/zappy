@@ -71,7 +71,7 @@ pub mod cache;
 pub mod error;
 
 // Re-exports.
-pub use cache::{clear_cache_dir, ensure_bundled_templates_available, resolve_cache_dir};
+pub use cache::{clear_cache_dir, ensure_bundled_templates_available};
 
 // Tests.
 #[cfg(test)]

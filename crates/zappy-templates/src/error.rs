@@ -5,6 +5,7 @@ use thiserror::Error;
 /// Result alias used by `zappy-templates`.
 pub type TemplatesResult<T> = std::result::Result<T, Box<TemplatesError>>;
 
+/// Errors produced while managing bundled template cache files.
 #[derive(Debug, Error)]
 pub enum TemplatesError {
     /// Bundled templates cache directory could not have been resolved.
