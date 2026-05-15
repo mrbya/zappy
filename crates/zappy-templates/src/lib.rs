@@ -50,6 +50,25 @@ pub fn ensure_bundled_templates_available() -> TemplatesResult<PathBuf> {
     Ok(templates_dir)
 }
 
+/// Clears bundled templates cache.
+///
+/// # Errors
+/// Returns [`TemplatesError::ClearCache`] if cache clear fails.
+pub fn clear_cache_dir() -> TemplatesResult<()> {
+    let templates_dir = resolve_cache_dir()?;
+
+    if templates_dir.exists() {
+        fs::remove_dir_all(&templates_dir).map_err(|source| {
+            Box::new(TemplatesError::ClearCache {
+                path: templates_dir,
+                source,
+            })
+        })?;
+    }
+
+    Ok(())
+}
+
 /// Resolves the bundled template cache directory.
 fn resolve_cache_dir() -> TemplatesResult<PathBuf> {
     let Some(project_dirs) = directories::ProjectDirs::from("", "", "zappy") else {

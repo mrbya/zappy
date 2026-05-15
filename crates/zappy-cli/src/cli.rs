@@ -16,6 +16,10 @@ pub struct Cli {
     #[arg(short, long, action = clap::ArgAction::Count)]
     pub verbose: u8,
 
+    /// Clear templates cache before executing a command.
+    #[arg(short = 'c', long)]
+    pub clear: bool,
+
     /// Execute a Zappy command.
     #[command(subcommand)]
     pub command: Command,
@@ -198,6 +202,16 @@ pub struct CreateArgs {
 #[must_use]
 pub fn run() -> ExitCode {
     let cli = Cli::parse();
+
+    if cli.clear {
+        match zappy_templates::clear_cache_dir() {
+            Ok(()) => {}
+            Err(error) => {
+                eprintln!("Error: {error}");
+                return ExitCode::FAILURE;
+            }
+        }
+    }
 
     match cli.command {
         Command::List(args) => commands::list(&args),
