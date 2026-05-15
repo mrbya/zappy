@@ -445,6 +445,34 @@ fn template_cpp_cmake_lib_generates() {
 }
 
 #[test]
+fn template_lua_cli_generates() {
+    let output = tempfile::TempDir::new().expect("output tempdir should be created");
+    let project_dir = output.path().join("my-tool");
+
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args([
+            "new",
+            "--template",
+            "lua-cli",
+            "--templates-dir",
+            "crates/zappy-templates/templates",
+            "--name",
+            "my-tool",
+            "--var",
+            "description=\"My generated tool\"",
+            "--output",
+        ])
+        .arg(&project_dir)
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("Generated `lua-cli`"));
+
+    assert!(project_dir.join("justfile").exists());
+    assert!(project_dir.join(".luacov").exists());
+}
+
+#[test]
 fn zappy_should_see_builtin_templates() {
     assert_cmd::Command::cargo_bin("zappy")
         .expect("zappy binary should exist")
