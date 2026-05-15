@@ -9,7 +9,7 @@ use crate::error::{TemplatesError, TemplatesResult};
 static BUNDLED_TEMPLATES: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/templates");
 
 /// Cache marker file name.
-const CACHE_MARKER: &str = ".zappy-templates-cache";
+pub const CACHE_MARKER: &str = ".zappy-templates-cache";
 
 /// Returns a real filesystem directory containing bundled templates.
 ///
