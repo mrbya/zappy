@@ -46,7 +46,7 @@
 ## Rustdoc And Lints
 - Crate roots enable `missing_docs` and `clippy::missing_docs_in_private_items`, so undocumented private items will fail normal lint flow.
 - Do not add new `#[allow(...)]` attributes to silence lint warnings; fix the underlying issue instead.
-- When adding or rewriting docs, match `docs/rustdoc_style.md` rather than ad-libbing a new style.
+- When adding or rewriting docs, match `docs/dev/rustdoc_style.md` rather than ad-libbing a new style.
 
 ## Easy To Guess Wrong
 - `new` only injects the built-in `project_name` variable today (`crates/zappy-cli/src/commands.rs`); do not assume the other reserved built-ins in `zappy-core/src/builtins.rs` are wired into CLI generation yet.

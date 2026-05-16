@@ -9,8 +9,24 @@ use crate::commands;
 
 /// Zappy CLI.
 #[derive(Debug, Parser)]
-#[command(name = "zappy")]
-#[command(author, version, about, long_about = None)]
+#[command(
+    name = "zappy",
+    about = "Zappy - Electrifying project templating/scaffolding engine.",
+    version,
+    propagate_version = true,
+    after_help = r#"Examples:
+  # List available templates
+  zappy list
+
+  # See template info
+  zappy info --template rust-cli
+
+  # Generate a new project
+  zappy new --template rust-cli --name cli_app -a description="My super app"
+
+for more info, see https://gitlab.com/byacrates/zappy
+"#
+)]
 pub struct Cli {
     /// Output verbosity. Use `-v`, `-vv`, `-vvv` for increasingly detailed output.
     #[arg(short, long, action = clap::ArgAction::Count)]
