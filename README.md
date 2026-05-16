@@ -3,7 +3,7 @@
 [![docs.rs](https://img.shields.io/docsrs/zappy)](https://docs.rs/zappy)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 [![pipeline](https://gitlab.com/byacrates/nishikaze/badges/master/pipeline.svg)](https://gitlab.com/byacrates/nishikaze/-/commits/master)
-[![coverage report](https://gitlab.com/byacrates/zappybadges/master/coverage.svg)](https://gitlab.com/byacrates/zappy-/commits/master)
+[![coverage report](https://gitlab.com/byacrates/zappy/badges/master/coverage.svg)](https://gitlab.com/byacrates/zappy/-/commits/master)
 
 > Electrifying project templating/scaffolding engine.
 
