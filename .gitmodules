@@ -1,6 +1,0 @@
-[submodule "docs/similar-projects/zappy"]
-	path = docs/similar-projects/zappy
-	url = https://gitlab.com/byarocks/zappy.git
-[submodule "docs/similar-projects/spawnpoint"]
-	path = docs/similar-projects/spawnpoint
-	url = https://github.com/normano/spawnpoint.git

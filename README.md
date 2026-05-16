@@ -331,8 +331,6 @@ Codebase documented using a consistent rustdoc style described in [rustdoc style
 - [Zappy luarock](https://gitlab.com/byarocks/zappy)
 - [Spawnpoint](https://github.com/normano/spawnpoint)
 
-> 🔔 **Note**: Both projects are present in the workspace under `docs/similar-projects`. They are, however, not part of the project.
-
 ---
 
 ## License
