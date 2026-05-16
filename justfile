@@ -48,10 +48,6 @@ build *FLAGS:
 clean:
     cargo clean
 
-# Generate documentation. Add '-- open' to open the docs in a web page.
-docs *FLAGS:
-    cargo doc --no-deps --all-features --document-private-items --workspace {{FLAGS}}
-
 # Run Criterion benchmark suite.
 benchmark *FLAGS:
     cargo bench --benches --features full {{FLAGS}}
@@ -125,6 +121,27 @@ install:
 pre-commit-install:
     pre-commit install
 
+# Generate documentation. Add '-- open' to open the docs in a web page.
+docs *FLAGS:
+    cargo doc --no-deps --all-features --document-private-items --workspace {{FLAGS}}
+
+# Build the Zappy book.
+book:
+    mdbook build docs/book
+
+# Serve the Zappy book locally.
+book-serve:
+    mdbook serve docs/book --open
+
+# Check the Zappy book builds.
+book-check:
+    mdbook build docs/book
+
+# Generate Rust docs and the book.
+docs-all:
+    cargo doc --no-deps --all-features --document-private-items --workspace
+    mdbook build docs/book
+
 docker-build:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -158,6 +175,8 @@ init:
     echo # things required by thorough-check
     cargo udeps -V || cargo binstall cargo-udeps --no-confirm
     cargo audit -V || cargo binstall cargo-audit --no-confirm
+    echo # installing mdbook
+    mdbook --version || cargo binstall mdbook --no-confirm
     echo # installing markdown-toc
     npm list -g markdown-toc || npm install -g markdown-toc
     echo # installing git hooks
