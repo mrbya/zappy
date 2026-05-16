@@ -62,7 +62,7 @@ fn install_bundled_templates(templates_dir: &Path) -> TemplatesResult<()> {
 
     extract_dir(&BUNDLED_TEMPLATES, templates_dir)?;
 
-    fs::write(templates_dir.join(CACHE_MARKER), env!("CARGO_PKG_VERSION")).map_err(|source| {
+    fs::write(templates_dir.join(CACHE_MARKER), expected_marker()).map_err(|source| {
         Box::new(TemplatesError::WriteFile {
             path: templates_dir.join(CACHE_MARKER),
             source,
@@ -74,7 +74,22 @@ fn install_bundled_templates(templates_dir: &Path) -> TemplatesResult<()> {
 
 /// Checks whether the current cache is up to date and ready.
 fn cache_is_ready(templates_dir: &Path) -> bool {
-    templates_dir.join(CACHE_MARKER).is_file()
+    let marker_path = templates_dir.join(CACHE_MARKER);
+
+    let Ok(marker) = fs::read_to_string(marker_path) else {
+        return false;
+    };
+
+    marker == expected_marker()
+}
+
+/// Generates expected cache marker contents.
+fn expected_marker() -> String {
+    format!(
+        "cache_format=1\npackage=zappy-templates\npackage_version={}\ntemplates_hash={}\n",
+        env!("CARGO_PKG_VERSION"),
+        env!("ZAPPY_TEMPLATES_HASH"),
+    )
 }
 
 /// Resolves the bundled template cache directory.

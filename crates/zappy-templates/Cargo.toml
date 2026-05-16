@@ -20,6 +20,9 @@ include_dir.workspace = true
 
 [dev-dependencies]
 
+[build-dependencies]
+sha2.workspace = true
+
 [package.metadata.cargo-udeps.ignore]
 normal = [
     "zappy",
@@ -31,4 +34,3 @@ normal = [
     "zappy-templates"
 ]
 development = ["criterion", "pretty_assertions"]
-
