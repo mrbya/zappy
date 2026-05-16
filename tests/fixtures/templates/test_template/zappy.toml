@@ -1,0 +1,96 @@
+[template]
+id = "test-template"
+name = "Test template"
+description = "Test template fixture for Zappy"
+language = "other"
+version = "1.2.3"
+
+[template.source]
+root = "template"
+
+# Tests all variable transforms.
+[variables]
+test_var = {
+    required = true,
+    prompt = "Test variable",
+    transforms = ["raw", "kebab", "snake", "pascal", "camel", "screaming_snake", "upper", "lower"],
+    placeholders = {
+        raw             = "__TEST_VAR__",
+        kebab           = "__TEST_VAR_KEBAB__",
+        snake           = "__TEST_VAR_SNAKE__",
+        pascal          = "__TEST_VAR_PASCAL__",
+        camel           = "__TEST_VAR_CAMEL__",
+        screaming_snake = "__TEST_VAR_SCREAMING__",
+        upper           = "__TEST_VAR_UPPER__",
+        lower           = "__TEST_VAR_LOWER__",
+    }
+}
+
+include_optional = {
+    default = false
+}
+
+pre_hooks = {
+    default = false
+}
+
+post_hooks = {
+    default = false
+}
+
+[paths]
+exclude = [".git", "dir2/exclude.md"]
+# Intentionaly leaving out `.stl` to get a warning.
+binary_extensions = ["png"]
+# Tests utf-8 file copy as a binary.
+binary_files = ["dir2/binary3.md"]
+
+# Conditional path test.
+[[conditionals]]
+path = "optional.md"
+when = "include_optional"
+
+[[hooks.pre_generate]]
+name = "Write pre-generate tree"
+command = "sh"
+args = ["-c", "ls -aln > __ZAPPY_PROJECT_NAME__.tree.pre"]
+when = "post_hooks"
+optional = false
+
+[[hooks.post_generate]]
+name = "Write hook marker"
+command = "sh"
+args = ["-c", "printf 'hook ran for __ZAPPY_PROJECT_NAME__' > hook-marker.txt"]
+when = "post_hooks"
+optional = false
+
+[[hooks.post_generate]]
+name = "Write post-generate tree"
+command = "sh"
+args = ["-c", "ls -aln > __ZAPPY_PROJECT_NAME__.tree.post"]
+when = "post_hooks"
+optional = false
+
+[validation]
+output_dir_name = "validated-test-template"
+variables = {
+    test_var = "my cool tool",
+    include_optional = true,
+    pre_hooks = true,
+    post_hooks = true,
+}
+
+[[validation.steps]]
+name = "Check README exists"
+command = "test"
+args = ["-f", "README.md"]
+
+[[validation.steps]]
+name = "Check snake-case path exists"
+command = "test"
+args = ["-f", "dir4/my_cool_tool.md"]
+
+[[validation.steps]]
+name = "Check optional file exists"
+command = "test"
+args = ["-f", "optional.md"]

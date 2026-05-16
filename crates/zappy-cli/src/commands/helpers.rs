@@ -1,0 +1,310 @@
+use std::path::{Path, PathBuf};
+use std::process::Command as OsCommand;
+
+use zappy_core::builtins::{DATE, DAY, EMAIL, MONTH, PROJECT_NAME, USER, YEAR};
+use zappy_core::hooks::HookSpec;
+use zappy_core::{GenerationPlan, ResolvedVariables, VariableValue, VariableValueMap};
+use zappy_fs::{
+    DiscoveredTemplate, DiscoveryConfig, InitTemplateInput, MaterializationOptions,
+    create_directory, discover_templates, init_template_skeleton, materialize_generation_plan,
+};
+use zappy_hooks::{ExecuteHooksInput, HookPhase, execute_hooks};
+use zappy_templates::ensure_bundled_templates_available;
+
+/// Constructs discovery config.
+pub(super) fn discovery_config(templates_dir: Option<PathBuf>) -> DiscoveryConfig {
+    let bundled_templates_dir = if templates_dir.is_some() {
+        None
+    } else {
+        match ensure_bundled_templates_available() {
+            Ok(path) => Some(path),
+            Err(error) => {
+                eprint!("warning: failed to prepare bundled templates: {error}");
+                None
+            }
+        }
+    };
+
+    DiscoveryConfig {
+        templates_dir,
+        bundled_templates_dir,
+    }
+}
+
+/// Resolve command template.
+///
+/// # Returns
+/// Some(`DiscoveredTemplate`) discovered template on succes, None on failure.
+pub(super) fn resolve_template(
+    templates_dir: Option<PathBuf>,
+    id: &str,
+) -> Option<DiscoveredTemplate> {
+    let config = discovery_config(templates_dir);
+
+    let catalogue = match discover_templates(&config) {
+        Ok(catalogue) => catalogue,
+        Err(error) => {
+            eprintln!("Error: {error}");
+            return None;
+        }
+    };
+
+    let Some(template) = catalogue.find_by_id(id) else {
+        eprintln!("Error: template `{id}` was not found");
+        return None;
+    };
+
+    Some(template.clone())
+}
+
+/// Runs filesystem an hook execution paths for zappy commands.
+///
+/// # Returns
+/// `Err(())` if plan materialization or hook execution fails, `Ok(())` otherwise.
+pub(super) fn run_generation(
+    no_hooks: bool,
+    force: bool,
+    template: &DiscoveredTemplate,
+    resolved: &ResolvedVariables,
+    plan: &GenerationPlan,
+) -> Result<(), ()> {
+    if let Err(error) = create_directory(&plan.output_dir) {
+        eprintln!("Error: {error}");
+        return Err(());
+    }
+
+    if !no_hooks
+        && run_hooks(
+            "pre-generate",
+            HookPhase::PreGenerate,
+            &template.manifest.hooks.pre_generate,
+            &plan.output_dir,
+            resolved,
+        )
+        .is_err()
+    {
+        return Err(());
+    }
+
+    let options = MaterializationOptions { force };
+
+    let summary = match materialize_generation_plan(plan, options) {
+        Ok(summary) => summary,
+        Err(error) => {
+            eprintln!("Error: {error}");
+            return Err(());
+        }
+    };
+
+    if !no_hooks
+        && run_hooks(
+            "post-generate",
+            HookPhase::PostGenerate,
+            &template.manifest.hooks.post_generate,
+            &plan.output_dir,
+            resolved,
+        )
+        .is_err()
+    {
+        return Err(());
+    }
+
+    println!(
+        "Generated `{}` in {}",
+        &template.manifest.template.id.as_str(),
+        plan.output_dir.display()
+    );
+    println!(
+        "Created {} directories, wrote {} text files, copied {} binary files, skipped {} paths.",
+        summary.directories_created,
+        summary.text_files_written,
+        summary.binary_files_copied,
+        summary.skipped,
+    );
+
+    Ok(())
+}
+
+/// Creates template skeleton based on provided input.
+///
+/// # Returns
+/// `Ok(())` on success `Err(())` otherwise.
+pub(super) fn create_template_skeleton(input: &InitTemplateInput) -> Result<(), ()> {
+    match init_template_skeleton(input) {
+        Ok(()) => {
+            println!(
+                "Initialized template skeleton at {}",
+                input.output_dir.display()
+            );
+            Ok(())
+        }
+        Err(error) => {
+            eprintln!("Error: {error}");
+            Err(())
+        }
+    }
+}
+
+/// Date helper struct.
+#[derive(Debug, Clone)]
+struct DateParts {
+    /// Full date.
+    date: String,
+
+    /// Day slice of the date.
+    day: String,
+
+    /// Month slice of the date.
+    month: String,
+
+    /// Year slice of the date.
+    year: String,
+}
+
+impl DateParts {
+    /// Constructs date.
+    #[must_use]
+    pub fn new() -> Self {
+        let now =
+            time::OffsetDateTime::now_local().unwrap_or_else(|_| time::OffsetDateTime::now_utc());
+
+        let year = now.year();
+        let month = now.month();
+        let day = now.day();
+
+        Self {
+            date: format!("{year:04}-{month:02}-{day:02}"),
+            day: format!("{day:02}"),
+            month: format!("{month:02}"),
+            year: format!("{year:04}"),
+        }
+    }
+}
+
+/// Constructs command built-in variables.
+pub(super) fn command_builtins(project_name: String) -> VariableValueMap {
+    let mut builtins = VariableValueMap::new();
+
+    let date = DateParts::new();
+    let user = user_name();
+    let email = user_email();
+
+    builtins.insert(
+        String::from(PROJECT_NAME),
+        VariableValue::String(project_name),
+    );
+    builtins.insert(String::from(USER), VariableValue::String(user));
+    builtins.insert(String::from(EMAIL), VariableValue::String(email));
+    builtins.insert(String::from(DATE), VariableValue::String(date.date));
+    builtins.insert(String::from(DAY), VariableValue::String(date.day));
+    builtins.insert(String::from(MONTH), VariableValue::String(date.month));
+    builtins.insert(String::from(YEAR), VariableValue::String(date.year));
+
+    builtins
+}
+
+/// Retrieves host username.
+fn user_name() -> String {
+    git_user_name()
+        .or_else(env_user)
+        .unwrap_or_else(|| String::from("{TODO: add username}"))
+}
+
+/// Retrieves git username.
+fn git_user_name() -> Option<String> {
+    let output = OsCommand::new("git")
+        .args(["config", "user.name"])
+        .output()
+        .ok()?;
+
+    if !output.status.success() {
+        return None;
+    }
+
+    let value = String::from_utf8_lossy(&output.stdout).trim().to_owned();
+
+    if value.is_empty() {
+        return None;
+    }
+
+    Some(value)
+}
+
+/// Retrieves env username.
+fn env_user() -> Option<String> {
+    std::env::var("USER")
+        .or_else(|_| std::env::var("USERNAME"))
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+}
+
+/// Retrieves user email.
+fn user_email() -> String {
+    git_user_email().unwrap_or_else(|| String::from("{TODO: add user email}"))
+}
+
+/// Retrieves user git email.
+fn git_user_email() -> Option<String> {
+    let output = OsCommand::new("git")
+        .args(["config", "user.email"])
+        .output()
+        .ok()?;
+
+    if !output.status.success() {
+        return None;
+    }
+
+    let value = String::from_utf8_lossy(&output.stdout).trim().to_owned();
+
+    if value.is_empty() {
+        return None;
+    }
+
+    Some(value)
+}
+
+/// Execute hooks for a single command phase.
+///
+/// # Returns
+/// `true` if hook execution fails, `false` otherwise.
+pub(super) fn run_hooks(
+    phase_name: &str,
+    phase: HookPhase,
+    hooks: &[HookSpec],
+    output_dir: &Path,
+    resolved: &ResolvedVariables,
+) -> Result<(), ()> {
+    let input = ExecuteHooksInput {
+        phase,
+        hooks,
+        output_dir,
+        variables: resolved,
+    };
+
+    let summary = match execute_hooks(&input) {
+        Ok(summary) => summary,
+        Err(error) => {
+            eprintln!("Error: {error}");
+            return Err(());
+        }
+    };
+
+    print_hook_summary(phase_name, &summary);
+    Ok(())
+}
+
+/// Prints hooks execution summary.
+pub(super) fn print_hook_summary(phase: &str, summary: &zappy_hooks::HookExecutionSummary) {
+    if summary.executed == 0 && summary.skipped == 0 && summary.optional_failed == 0 {
+        return;
+    }
+
+    println!(
+        "Hooks ({phase}): executed {}, skipped {}, optional failures {}.",
+        summary.executed, summary.skipped, summary.optional_failed,
+    );
+
+    for warning in &summary.warnings {
+        eprintln!("Warning: {warning}");
+    }
+}

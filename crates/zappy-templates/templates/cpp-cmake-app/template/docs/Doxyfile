@@ -1,0 +1,28 @@
+# Basic project config
+PROJECT_NAME            = __ZAPPY_PROJECT_NAME_SNAKE__
+OUTPUT_DIRECTORY        = _build
+GENERATE_LATEX          = NO
+GENERATE_HTML           = NO
+GENERATE_XML            = YES
+
+# Input
+INPUT                   = ../include
+FILE_PATTERNS           = *.hpp
+RECURSIVE               = YES
+EXTRACT_ALL             = YES
+EXTRACT_PRIVATE         = NO
+EXTRACT_STATIC          = NO
+EXTRACT_NAMESPACE       = YES
+QUIET                   = YES
+
+# Preprocessor
+ENABLE_PREPROCESSING    = YES
+MACRO_EXPANSION         = YES
+EXPAND_ONLY_PREDEF      = NO
+
+# Output
+XML_OUTPUT              = xml
+
+ENABLE_PREPROCESSING = YES
+MACRO_EXPANSION      = YES
+EXPAND_ONLY_PREDEF   = YES

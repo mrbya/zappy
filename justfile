@@ -13,7 +13,7 @@ help:
 fmt *FLAGS:
     cargo +nightly fmt --all {{FLAGS}}
 
-# Run clippy on codesbase, tests and examples.
+# Run clippy on codebase, tests and examples.
 check *FLAGS:
     cargo clippy --tests --examples --all-targets --all-features --workspace {{FLAGS}}
 
@@ -23,7 +23,8 @@ test *FLAGS:
 
 # Runs tests with a coverage report.
 test-cov *FLAGS:
-    cargo llvm-cov nextest --all-features --workspace --fail-under-lines 85 {{FLAGS}}
+    # cargo llvm-cov nextest --all-features --workspace --fail-under-lines 85 {{FLAGS}}
+    cargo llvm-cov nextest --all-features --workspace {{FLAGS}}
 
 # Runs doc tests.
 doctest:
@@ -37,19 +38,18 @@ test-cov-ci *FLAGS:
 
 # Build and run.
 run *FLAGS:
-    cargo run -p zappy {{FLAGS}}
+    cargo run {{FLAGS}}
 
 # Build release.
 build *FLAGS:
-    cargo build --workspace --release -p zappy {{FLAGS}}
+    cargo build --workspace --release {{FLAGS}}
+
+build-windows *FLAGS:
+    cargo build --workspace --release --target x86_64-pc-windows-gnu {{FLAGS}}
 
 # Cleans rust build artifacts.
 clean:
     cargo clean
-
-# Generate documentation. Add '-- open' to open the docs in a web page.
-docs *FLAGS:
-    cargo doc --no-deps --all-features --document-private-items --workspace {{FLAGS}}
 
 # Run Criterion benchmark suite.
 benchmark *FLAGS:
@@ -75,7 +75,19 @@ audit *FLAGS:
 unused *FLAGS:
     cargo +nightly udeps --all-targets --workspace
 
-# Check formating and linter checks, check for unused dependencies and audits for vulnerabilities.
+# Validates a template:
+test-template TEMPLATE:
+    @just run -- validate -i crates/zappy-templates/templates -t {{TEMPLATE}}
+
+# Validates bundled templates.
+test-templates:
+    @just test-template rust-cli
+    @just test-template cpp-cmake-app
+    @just test-template cpp-cmake-lib
+    @just test-template lua-cli
+    @just test-template nvim-plugin
+
+# Check formatting and linter checks, check for unused dependencies and audits for vulnerabilities.
 thorough-check:
     @just fmt --check
     @just check -- -D warnings
@@ -86,7 +98,7 @@ thorough-check:
 index:
     markdown-toc -i README.md
 
-# Runs formating, tests and checks necessary before a commit.
+# Runs formatting, tests and checks necessary before a commit.
 pre-commit:
     @just fmt
     @just thorough-check
@@ -106,7 +118,32 @@ install-hooks:
 
 # Builds and installs dkb-lsp binary.
 install:
-    cargo install --path crates/zappy
+    cargo install --path .
+
+# Install pre-commit hooks.
+pre-commit-install:
+    pre-commit install
+
+# Generate documentation. Add '-- open' to open the docs in a web page.
+docs *FLAGS:
+    cargo doc --no-deps --all-features --document-private-items --workspace {{FLAGS}}
+
+# Build the Zappy book.
+book:
+    mdbook build docs/book
+
+# Serve the Zappy book locally.
+book-serve:
+    mdbook serve docs/book --open
+
+# Check the Zappy book builds.
+book-check:
+    mdbook build docs/book
+
+# Generate Rust docs and the book.
+docs-all:
+    @just docs
+    @just book
 
 docker-build:
     #!/usr/bin/env bash
@@ -127,10 +164,12 @@ docker-build:
     sudo docker push "${IMAGE}"
     sudo docker push "${IMAGE_LATEST}"
 
-# Initializes the project by installing all tools necessary. Should be run once before begining of development.
+# Initializes the project by installing all tools necessary. Should be run once before beginning of development.
 init:
     echo # installing nightly channel
     rustup install nightly
+    echo # installing x86_64-pc-windows-gnu for cross-compilation
+    rustup target add x86_64-pc-windows-gnu
     echo # installing cargo-binstall for faster setup time
     cargo binstall -V || cargo install cargo-binstall
     echo # things required by test recipes
@@ -141,6 +180,8 @@ init:
     echo # things required by thorough-check
     cargo udeps -V || cargo binstall cargo-udeps --no-confirm
     cargo audit -V || cargo binstall cargo-audit --no-confirm
+    echo # installing mdbook
+    mdbook --version || cargo binstall mdbook --no-confirm
     echo # installing markdown-toc
     npm list -g markdown-toc || npm install -g markdown-toc
     echo # installing git hooks

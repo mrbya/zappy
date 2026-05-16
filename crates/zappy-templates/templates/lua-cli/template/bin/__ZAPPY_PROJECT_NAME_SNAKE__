@@ -1,0 +1,3 @@
+#!/bin/lua
+
+require('__ZAPPY_PROJECT_NAME_SNAKE__').run()

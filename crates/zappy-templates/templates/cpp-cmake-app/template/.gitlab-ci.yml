@@ -1,0 +1,42 @@
+image: __GITLAB_IMAGE_REGISTRY__:latest
+
+stages:
+  - build
+  - test
+  - coverage
+
+before_script:
+  - git submodule update --init
+
+build:
+  stage: build
+  script:
+    - mkdir -p build && cd build
+    - cmake .. -GNinja
+    - ninja
+  artifacts:
+    paths:
+      - build/
+
+test:
+  stage: test
+  dependencies:
+    - build
+  script:
+    - cd build
+    - ninja test
+  artifacts:
+    paths:
+      - build/
+
+coverage:
+  stage: coverage
+  dependencies:
+    - test
+  script:
+    - cd build
+    - ninja cov
+  coverage: '/^\s*lines\.+:\s*\d+(?:\.\d+)?%/'
+  artifacts:
+    paths:
+      - build/coverage.info

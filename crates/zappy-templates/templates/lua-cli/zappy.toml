@@ -1,0 +1,92 @@
+# Template metadata.
+[template]
+id = "lua-cli"
+name = "Lua CLI app"
+description = "Luarock-bundled Lua-based CLI application using argparse."
+language = "lua"
+version = "0.1.0"
+
+# Template source directory.
+[template.source]
+root = "template"
+
+# Template variable definitions.
+[variables]
+description = {
+    required = true,
+    default = "{TODO: add project description}",
+    placeholders = {
+        raw = "__DESCRIPTION__",
+    }
+}
+
+repo = {
+    required = true,
+    default = "{TODO: add project repo}",
+    placeholders = {
+        raw = "__REPO__",
+    }
+}
+
+use_gitlab_ci = {
+    default = false,
+}
+
+gitlab_image_registry = {
+    prompt = "Gitlab image registry",
+    required_when = "use_gitlab_ci",
+    placeholders = {
+        raw = "__GITLAB_IMAGE_REGISTRY__",
+    }
+}
+
+# Template file path config.
+[paths]
+exclude = [".git", ".DS_Store", "target"]
+binary_extensions = ["png", "jpg", "jpeg", "gif", "ico", "pdf", "zip"]
+binary_files = []
+
+# Conditional include paths.
+[[conditionals]]
+path = ".gitlab-ci.yml"
+when = "use_gitlab_ci"
+
+[[conditionals]]
+path = "Dockerfile"
+when = "use_gitlab_ci"
+
+# Template generation hooks
+[[hooks.post_generate]]
+name = "Format codebase"
+command = "stylua"
+args = ["."]
+optional = true
+
+# Template validation config.
+[validation]
+output_dir_name = "zappy-lua-cli"
+variables = {
+    description = "Generated test CLI",
+    repo = "https://github.com/brucelee/nope.git",
+    use_gitlab_ci = false,
+}
+
+# # Validation setup hooks.
+[[validation.setup]]
+name = "install just"
+command = "sh"
+args = ["-c", "just -V || cargo install just"]
+
+[[validation.setup]]
+name = "bootstrap recipe"
+command = "just"
+args = ["init"]
+
+# Validation process steps.
+[[validation.steps]]
+name = "checks and tests"
+command = "just"
+args = ["ci"]
+
+# Validation teardown hooks.
+# [[validation.teardown]]

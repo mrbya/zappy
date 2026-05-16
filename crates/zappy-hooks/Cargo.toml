@@ -1,6 +1,6 @@
 [package]
 name = "zappy-hooks"
-version = "0.0.1-pre"
+version.workspace = true
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -13,6 +13,12 @@ categories.workspace = true
 description = "Zappy - Pre/post generation + validation hooks"
 
 [dependencies]
+zappy-core.workspace = true
+thiserror.workspace = true
+indexmap.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
 
 [package.metadata.cargo-udeps.ignore]
 normal = [
@@ -21,6 +27,7 @@ normal = [
     "zappy-cli",
     "zappy-core",
     "zappy-fs",
-    "zappy-hooks"
+    "zappy-hooks",
+    "zappy-templates"
 ]
 development = ["criterion", "pretty_assertions"]

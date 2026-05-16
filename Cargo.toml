@@ -3,9 +3,10 @@ members = [
     "./",
     "crates/zappy-adapters",
     "crates/zappy-cli",
-    "crates/zappy-core", 
-    "crates/zappy-fs", 
+    "crates/zappy-core",
+    "crates/zappy-fs",
     "crates/zappy-hooks",
+    "crates/zappy-templates",
 ]
 resolver = "2"
 
@@ -19,7 +20,7 @@ repository              = "https://gitlab.com/byacrates/zappy.git"
 license                 = "MIT OR Apache-2.0"
 keywords                = ["zappy", "templates", "scaffolding"]
 categories              = ["command-line-utilities"]
-version                 = "0.0.1-pre"
+version                 = "0.1.0"
 
 [package]
 name                    = "zappy"
@@ -42,13 +43,32 @@ zappy-cli               = { path = "crates/zappy-cli" }
 zappy-core              = { path = "crates/zappy-core" }
 zappy-fs                = { path = "crates/zappy-fs" }
 zappy-hooks             = { path = "crates/zappy-hooks" }
+zappy-templates         = { path = "crates/zappy-templates" }
 # Other workspace deps
+clap                    = { version = "4", features = ["derive"] }
+camino                  = { version = "1", features = ["serde1"] }
+indexmap                = { version = "2", features = ["serde"] }
+serde                   = { version = "1", features = ["derive"] }
+thiserror               = { version = "2" }
+toml                    = { version = "1" }
+directories             = { version = "6" }
+tempfile                = { version = "3" }
+assert_cmd              = { version = "2" }
+predicates              = { version = "3" }
+heck                    = { version = "0.5" }
+time                    = { version = "0.3", features = ["local-offset"] }
+include_dir             = { version = "0.7" }
+sha2                    = { version = "0.10" }
 
 [dependencies]
+zappy-cli.workspace = true
 
 [dev-dependencies]
 criterion = "0.8"
 pretty_assertions = "1"
+assert_cmd.workspace = true
+predicates.workspace = true
+tempfile.workspace = true
 
 [features]
 default = []
@@ -69,7 +89,8 @@ normal = [
     "zappy-cli",
     "zappy-core",
     "zappy-fs",
-    "zappy-hooks"
+    "zappy-hooks",
+    "zappy-templates"
 ]
 development = ["criterion", "pretty_assertions"]
 

@@ -1,0 +1,13 @@
+[book]
+title = "Zappy Book"
+authors = ["mrbya"]
+description = "Documentation for the Zappy project templating engine"
+language = "en"
+src = "src"
+
+[build]
+build-dir = "../../public"
+
+[output.html]
+git-repository-url = "https://gitlab.com/byacrates/zappy"
+edit-url-template = "https://gitlab.com/byacrates/zappy/-/edit/dev/docs/book/{path}"

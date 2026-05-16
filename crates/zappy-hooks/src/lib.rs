@@ -1,14 +1,18 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+//! Hook and validation command execution for Zappy.
+//!
+//! This crate will eventually own pre/post generation hooks, validation setup,
+//! validation steps, teardown commands, working directories, environments, and
+//! stdout/stderr capture.
 
+/// Hook errors.
+pub mod error;
+/// Generation hook execution.
+pub mod hooks;
+
+// Re-exports.
+pub use error::{HooksError, HooksResult};
+pub use hooks::{ExecuteHooksInput, HookExecutionSummary, HookPhase, execute_hooks};
+
+// Tests
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+mod tests;

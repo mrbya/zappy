@@ -1,0 +1,13 @@
+# IDEs
+/.idea
+/.vs
+/.vscode
+/.nvim
+/.cache
+/.claude
+
+# Build artifacts
+/build
+
+# Docs (generated)
+/public

@@ -1,0 +1,88 @@
+# Template metadata.
+[template]
+id = "nvim-plugin"
+name = "Neovim plugin"
+description = "Neovim editor plugin for its lazy.nvim package manager"
+language = "lua"
+version = "0.1.0"
+
+# Template source directory.
+[template.source]
+root = "template"
+
+# Template variable definitions.
+[variables]
+description = {
+    required = true,
+    default = "{TODO: add project description}",
+    placeholders = {
+        raw = "__DESCRIPTION__",
+    }
+}
+
+use_gitlab_ci = {
+    default = false,
+}
+
+gitlab_image_registry = {
+    prompt = "Gitlab image registry",
+    required_when = "use_gitlab_ci",
+    placeholders = {
+        raw = "__GITLAB_IMAGE_REGISTRY__",
+    }
+}
+
+# Template file path config.
+[paths]
+exclude = [".git", ".DS_Store", "target"]
+binary_extensions = ["png", "jpg", "jpeg", "gif", "ico", "pdf", "zip"]
+binary_files = []
+
+# Conditional include paths.
+[[conditionals]]
+path = ".gitlab-ci.yml"
+when = "use_gitlab_ci"
+
+[[conditionals]]
+path = "Dockerfile"
+when = "use_gitlab_ci"
+
+# Template generation hooks
+[[hooks.post_generate]]
+name = "Format codebase"
+command = "stylua"
+args = ["."]
+optional = true
+
+# Template validation config.
+[validation]
+output_dir_name = "zappy-nvim-plugin"
+variables = {
+    description = "Generated test plugin",
+    use_gitlab_ci = false,
+}
+
+# Validation setup hooks.
+[[validation.setup]]
+name = "install just"
+command = "sh"
+args = ["-c", "just -V || cargo install just"]
+
+[[validation.setup]]
+name = "bootstrap recipe"
+command = "just"
+args = ["init"]
+
+# Validation process steps.
+[[validation.steps]]
+name = "check formatting"
+command = "just"
+args = ["fmt", "-c"]
+
+[[validation.steps]]
+name = "linter checks"
+command = "just"
+args = ["check", "--only", "0"]
+
+# Validation teardown hooks.
+# [[validation.teardown]]

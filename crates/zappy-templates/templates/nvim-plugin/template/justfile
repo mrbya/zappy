@@ -1,0 +1,72 @@
+#!/usr/bin/env just --justfile
+set dotenv-load := true
+
+# Output this list.
+list:
+    @just --list
+
+# Output this list.
+help:
+    @just list
+
+# Apply strict formatting.
+fmt *FLAGS:
+    stylua {{FLAGS}} .
+
+# Runs luacheck on codebase.
+check *FLAGS:
+    luacheck lua/ {{FLAGS}}
+
+# Check formatting and linter checks
+thorough-check:
+    @just fmt -c
+    @just check
+
+# Re-indexes readme index.
+index:
+    markdown-toc -i README.md
+
+# Runs formatting, tests and checks necessary before a commit.
+pre-commit:
+    @just fmt
+    @just thorough-check
+
+# Similar to `pre-commit` command, but is not interactive and doesn't modify the codebase. Suitable for automated CI pipelines.
+ci:
+    @just thorough-check
+
+# Install pre-commit hooks.
+pre-commit-install:
+    pre-commit install
+
+# Builds docker image for a gitlab CI runner.
+docker-build:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -z "${GITLAB_IMAGE_REGISTRY}" ]; then
+        exit 1 # GITLAB_IMAGE_REGISTRY variable has to be set
+    fi
+    IMAGE_TAG="$(git rev-parse --short HEAD)"
+    IMAGE_BASE="${GITLAB_IMAGE_REGISTRY}"
+    IMAGE="${IMAGE_BASE}:${IMAGE_TAG}"
+    IMAGE_LATEST="${IMAGE_BASE}:latest"
+    sudo docker buildx build -f "./Dockerfile" -t "${IMAGE}" --load \
+        --label "org.opencontainers.image.revision=$(git rev-parse HEAD)" \
+        --label "org.opencontainers.image.created=$(date)" \
+        --label "org.opencontainers.image.version=${IMAGE_TAG}" \
+        .
+    sudo docker tag "${IMAGE}" "${IMAGE_LATEST}"
+    sudo docker push "${IMAGE}"
+    sudo docker push "${IMAGE_LATEST}"
+
+# Initializes the project by installing all tools necessary. Should be run once before beginning of development.
+init:
+    echo # installing luacheck
+    luarocks --local install luacheck
+    echo # installing stylua
+    stylua -V || cargo install stylua
+    echo # installing markdown-toc
+    npm list -g markdown-toc || npm install -g markdown-toc
+    echo # installing git hooks
+    pre-commit --version || pip install pre-commit
+    pre-commit install || echo "failed to install git hooks!" 1>&2

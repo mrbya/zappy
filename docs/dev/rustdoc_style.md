@@ -315,4 +315,3 @@ The dominant style under `crates/` is structured, high-coverage rustdoc with the
 - Regular use of `# Arguments`, `# Returns`, and `# Errors`.
 - Strong preference for explaining intent and constraints.
 - Almost no example-driven documentation.
-

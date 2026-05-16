@@ -1,0 +1,12 @@
+# IDEs
+/.idea
+/.vs
+/.vscode
+/.nvim
+/.cache
+/.claude
+
+# Build artifacts
+*.rock
+luacov*
+coverage*

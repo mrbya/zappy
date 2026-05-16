@@ -1,14 +1,8 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+//! Ecosystem-specific adapters for Zappy.
+//!
+//! This crate is reserved for behavior that knows about specific ecosystems
+//! such as Git, Cargo, uv, CMake, Zephyr, npm, Tauri, or future recipe mode.
+//! Generic filesystem, hook, and core rendering behavior should not live here.
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+/// Current crate version.
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");

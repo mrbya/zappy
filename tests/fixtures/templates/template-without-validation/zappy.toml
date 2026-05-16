@@ -1,0 +1,9 @@
+[template]
+id = "template-without-validation"
+name = "Template without validation"
+description = "Template stub with no validation"
+language = "other"
+version = "1.2.3"
+
+[template.source]
+root = "template"
