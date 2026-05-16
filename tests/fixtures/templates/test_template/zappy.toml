@@ -53,7 +53,7 @@ when = "include_optional"
 [[hooks.pre_generate]]
 name = "Write pre-generate tree"
 command = "sh"
-args = ["-c", "tree . -L 3 > __ZAPPY_PROJECT_NAME__.tree.pre"]
+args = ["-c", "ls -aln > __ZAPPY_PROJECT_NAME__.tree.pre"]
 when = "post_hooks"
 optional = false
 
@@ -67,7 +67,7 @@ optional = false
 [[hooks.post_generate]]
 name = "Write post-generate tree"
 command = "sh"
-args = ["-c", "tree . -L 3 > __ZAPPY_PROJECT_NAME__.tree.post"]
+args = ["-c", "ls -aln > __ZAPPY_PROJECT_NAME__.tree.post"]
 when = "post_hooks"
 optional = false
 
