@@ -6,7 +6,12 @@
 
 - [Features](#features)
 - [Installation](#installation)
+- [Dependencies](#dependencies)
+- [Configuration](#configuration)
+  * [Default config](#default-config)
 - [Usage](#usage)
+  * [Kaymaps](#kaymaps)
+  * [Commands](#commands)
 - [Development](#development)
   * [Prequisites](#prequisites)
     + [Lua](#lua)
@@ -25,26 +30,50 @@ TBD
 
 ## Installation
 
-Install using luarocks:
-```bash
-luarocks install __ZAPPY_PROJECT_NAME_KEBAB__
+So far tested only with [lazy.nvim](https://github.com/folke/lazy.nvim)
+
+```lua
+{
+    'mrbya/__ZAPPY_PROJECT_NAME_SNAKE__',
+    event = 'VeryLazy',
+    opts = {},
+}
 ```
+`opts` table required to load plugin (even if empty).
+
+## Dependencies
+
+TBD
+
+## Configuration
+
+### Default config
+```lua
+{
+    filetypes = { '*' },
+
+    keymaps = {
+
+    },
+}
+```
+
+---
 
 ## Usage
 
-```bash
-Usage: __ZAPPY_PROJECT_NAME_SNAKE__ [-h] [-V] [<command>] ...
+### Kaymaps
 
-__DESCRIPTION__
+| Keymap | Command |
+| -------------- | --------------- |
+| `` |  |
 
-Options:
-   -h, --help            Show this help message and exit.
-   -V, --version         Display my_tool version.
+### Commands
 
-Commands:
-   greet, g              Prints a greeting.
+| Command | Action |
+| -------------- | --------------- |
+| `` |  |
 
-```
 ---
 
 ## Development
@@ -53,12 +82,6 @@ Commands:
 
 #### Lua
 - Lua > 5.1
-- [argparse](https://luarocks.org/modules/argparse/argparse)
-- [busted](https://luarocks.org/modules/lunarmodules/busted)
-- [luacov](https://luarocks.org/modules/lunarmodules/luacov)
-- [luassert](https://luarocks.org/modules/lunarmodules/luassert)
-- [luafilesystem](https://luarocks.org/modules/hisham/luafilesystem)
-- [inspect](https://luarocks.org/modules/kikito/inspect)
 - [luacheck](https://luarocks.org/modules/lunarmodules/luacheck)
 
 #### Other
@@ -76,21 +99,21 @@ This installs just and its `init` bootstrap recipe installs all extra tooling us
 
 ### Getting started
 
-Run __ZAPPY_PROJECT_NAME_SNAKE__ in dev:
-```bash
-just run <args>
+Add __ZAPPY_PROJECT_NAME__ repo as a local plugin:
 
+```lua
+--- example plugins.init.lua:
+return {
+    {
+        '__ZAPPY_PROJECT_NAME_SNAKE__',
+        dir = 'path/to/__ZAPPY_PROJECT_NAME_SNAKE__',
+        event = 'VeryLazy',
+        opts = {}
+    },
+}
 ```
 
-Run tests:
-```bash
-just test
-```
-
-Or run tests with coverage report:
-```bash
-just test-cov
-```
+Fire up neovim and test the plugin.
 
 ---
 

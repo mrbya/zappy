@@ -85,6 +85,8 @@ test-templates:
     @just test-template rust-cli
     @just test-template cpp-cmake-app
     @just test-template cpp-cmake-lib
+    @just test-template lua-cli
+    @just test-template nvim-plugin
 
 # Check formatting and linter checks, check for unused dependencies and audits for vulnerabilities.
 thorough-check:

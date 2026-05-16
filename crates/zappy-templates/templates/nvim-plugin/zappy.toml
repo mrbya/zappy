@@ -1,8 +1,8 @@
 # Template metadata.
 [template]
-id = "lua-cli"
-name = "Lua CLI app"
-description = "Luarock-bundled Lua-based CLI application using argparse."
+id = "nvim-plugin"
+name = "Neovim plugin"
+description = "Neovim editor plugin for its lazy.nvim package manager"
 language = "lua"
 version = "0.1.0"
 
@@ -17,14 +17,6 @@ description = {
     default = "{TODO: add project description}",
     placeholders = {
         raw = "__DESCRIPTION__",
-    }
-}
-
-repo = {
-    required = true,
-    default = "{TODO: add project repo}",
-    placeholders = {
-        raw = "__REPO__",
     }
 }
 
@@ -64,14 +56,13 @@ optional = true
 
 # Template validation config.
 [validation]
-output_dir_name = "zappy-lua-cli"
+output_dir_name = "zappy-nvim-plugin"
 variables = {
-    description = "Generated test CLI",
-    repo = "https://github.com/brucelee/nope.git",
+    description = "Generated test plugin",
     use_gitlab_ci = false,
 }
 
-# # Validation setup hooks.
+# Validation setup hooks.
 [[validation.setup]]
 name = "install just"
 command = "sh"
@@ -84,9 +75,14 @@ args = ["init"]
 
 # Validation process steps.
 [[validation.steps]]
-name = "checks and tests"
+name = "check formatting"
 command = "just"
-args = ["ci"]
+args = ["fmt", "-c"]
+
+[[validation.steps]]
+name = "linter checks"
+command = "just"
+args = ["check", "--only", "0"]
 
 # Validation teardown hooks.
 # [[validation.teardown]]

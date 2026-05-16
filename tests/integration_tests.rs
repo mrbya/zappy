@@ -470,6 +470,35 @@ fn template_lua_cli_generates() {
 
     assert!(project_dir.join("justfile").exists());
     assert!(project_dir.join(".luacov").exists());
+    assert!(project_dir.join(".stylua.toml").exists());
+}
+
+#[test]
+fn template_nvim_plugin_generates() {
+    let output = tempfile::TempDir::new().expect("output tempdir should be created");
+    let project_dir = output.path().join("my-tool");
+
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args([
+            "new",
+            "--template",
+            "nvim-plugin",
+            "--templates-dir",
+            "crates/zappy-templates/templates",
+            "--name",
+            "my-tool",
+            "--var",
+            "description=\"My generated tool\"",
+            "--output",
+        ])
+        .arg(&project_dir)
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("Generated `nvim-plugin`"));
+
+    assert!(project_dir.join("justfile").exists());
+    assert!(project_dir.join(".stylua.toml").exists());
 }
 
 #[test]

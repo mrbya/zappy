@@ -17,58 +17,6 @@ fmt *FLAGS:
 check *FLAGS:
     luacheck lua/ {{FLAGS}}
 
-# Run tests.
-test *FLAGS:
-    busted {{FLAGS}}
-
-# Generate coverage report.
-coverage:
-    luacov
-
-# Print coverage report summary.
-report:
-    #!/usr/bin/env bash
-    awk '
-      /^Summary$/ {
-        print prev
-        print
-        printing = 1
-        next
-      }
-
-      printing {
-        print
-      }
-
-      {
-        prev = $0
-      }
-    ' luacov.report.out
-
-# Runs tests with a coverage report.
-test-cov:
-    #!/usr/bin/env bash
-    rm -rf luacov*
-    just test -c
-    just coverage
-    just report
-
-# Runs __ZAPPY_PROJECT_NAME_SNAKE__ in development.
-[positional-arguments]
-run *FLAGS:
-    #!/usr/bin/env bash
-    LUA_PATH="./lua/?.lua;./lua/?/init.lua;./lua/lib/?.lua;;" lua bin/__ZAPPY_PROJECT_NAME_SNAKE__ "$@"
-
-# Builds and installs __ZAPPY_PROJECT_NAME_SNAKE__ luarock.
-install:
-    #!/usr/bin/env bash
-    luarocks --local make $(find rockspec -name *__ZAPPY_PROJECT_NAME_SNAKE__* | tail -1)
-
-# Uploads __ZAPPY_PROJECT_NAME_SNAKE__ to luarocks.org
-upload API-KEY:
-    #!/usr/bin/env bash
-    luarocks --local upload --api-key={{API-KEY}} $(find rockspec -name *__ZAPPY_PROJECT_NAME_SNAKE__* | tail -1) --force
-
 # Check formatting and linter checks
 thorough-check:
     @just fmt -c
@@ -82,12 +30,10 @@ index:
 pre-commit:
     @just fmt
     @just thorough-check
-    @just test-cov
 
 # Similar to `pre-commit` command, but is not interactive and doesn't modify the codebase. Suitable for automated CI pipelines.
 ci:
     @just thorough-check
-    @just test-cov
 
 # Install pre-commit hooks.
 pre-commit-install:
@@ -115,19 +61,6 @@ docker-build:
 
 # Initializes the project by installing all tools necessary. Should be run once before beginning of development.
 init:
-    echo # installing luarocks...
-    echo # installing argparse
-    luarocks --local install argparse
-    echo # installing busted
-    luarocks --local install busted
-    echo # installing luacov
-    luarocks --local install luacov
-    echo # installing luassert
-    luarocks --local install luassert
-    echo # installing lfs
-    luarocks --local install luafilesystem
-    echo # installing inspect
-    luarocks --local install inspect
     echo # installing luacheck
     luarocks --local install luacheck
     echo # installing stylua
