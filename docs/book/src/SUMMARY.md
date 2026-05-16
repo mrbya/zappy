@@ -32,4 +32,3 @@
 - [Contributing](./development/contributing.md)
 - [Architecture](./development/architecture.md)
 - [Crate Map](./development/crate-map.md)
-- [Agent Guide](./development/agent-guide.md)
