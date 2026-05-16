@@ -6,27 +6,16 @@
 
 > **Note:** This project is a re-implementation of the [zappy](https://gitlab.com/byarocks/zappy) luarock and takes heavy inspiration from the [spawn_point](https://github.com/normano/spawnpoint/tree/main) crate.
 
+To find out more read [Zappy Book](TBA).
+
 <!-- toc -->
 
 - [Why?](#why)
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
-  * [Commands](#commands)
-  * [`list` command](#list-command)
-  * [`info` command](#info-command)
-  * [`new` command](#new-command)
-  * [`validate` command](#validate-command)
-  * [`init` command](#init-command)
-  * [`create` command](#create-command)
 - [Templates](#templates)
   * [Built-in templates](#built-in-templates)
-  * [Template structure](#template-structure)
-  * [Placeholders and variables](#placeholders-and-variables)
-  * [Hooks](#hooks)
-  * [Template registries](#template-registries)
-  * [User templates](#user-templates)
-- [Config file](#config-file)
 - [Development](#development)
   * [Prequisites](#prequisites)
   * [Getting started](#getting-started)
@@ -91,109 +80,6 @@ Options:
   -V, --version     Print version
 ```
 
-### Commands
-
-| Command   | Summary    |
-|--------------- | --------------- |
-| `list`   | Lists available templates   |
-| `info`   | Display detailed info about a template   |
-| `new`   | Generate a new project   |
-| `validate`   | Validate a template   |
-| `init` | Initialize an empty template skeleton for a new custom template |
-| `create` | *WIP:* Creates a template from an existing project |
-
-### `list` command
-
-```bash
-Usage: zappy list [OPTIONS]
-
-Options:
-  -i, --templates-dir <TEMPLATES_DIR>  Optional template directory override
-  -l, --language <LANGUAGE>            Optional language/ecosystem filter
-  -h, --help                           Print help
-  -V, --version                        Print version
-```
-
-### `info` command
-
-```bash
-Usage: zappy info [OPTIONS] --template <TEMPLATE>
-
-Options:
-  -t, --template <TEMPLATE>            Template ID to inspect
-  -i, --templates-dir <TEMPLATES_DIR>  Optional templates directory override
-  -h, --help                           Print help
-  -V, --version                        Print version
-```
-
-### `new` command
-
-```bash
-Usage: zappy new [OPTIONS] --template <TEMPLATE> --name <PROJECT_NAME>
-
-Options:
-  -t, --template <TEMPLATE>            Template ID to generate from
-  -n, --name <PROJECT_NAME>            Name of the project to generate
-  -o, --output <OUTPUT>                Output directory
-  -a, --var <VARS>                     Template variable override in `key=value` form
-  -i, --templates-dir <TEMPLATES_DIR>  Optional templates directory override
-  -d, --dry-run                        Preview generation without writing files
-  -x, --non-interactive                Non-interactive mode (does not prompt for missing variables)
-  -f, --force                          Overwrite existing files
-  -s, --no-hooks                       Do not run template generation hooks
-  -h, --help                           Print help
-  -V, --version                        Print version
-```
-
-### `validate` command
-
-```bash
-Usage: zappy validate [OPTIONS] --template <TEMPLATE>
-
-Options:
-  -t, --template <TEMPLATE>            Template ID to validate
-  -i, --templates-dir <TEMPLATES_DIR>  Optional templates directory override
-  -k, --keep-temp                      Keep the temp validation directory
-  -s, --no-hooks                       Do not run template generation hooks. (has no effect on validation hooks)
-  -h, --help                           Print help
-  -V, --version                        Print version
-```
-
-### `init` command
-
-```bash
-Usage: zappy init [OPTIONS] --output <OUTPUT>
-
-Options:
-  -o, --output <OUTPUT>            Output path where the template skeleton should be created
-  -t, --template <TEMPLATE>        Optional template id
-  -n, --name <NAME>                Optional template name
-  -d, --description <DESCRIPTION>  Optional template description
-  -f, --force                      Force conflicting file overwrites?
-  -h, --help                       Print help
-  -V, --version                    Print version
-```
-
-### `create` command
-
-```bash
-Usage: zappy create [OPTIONS] --output <OUTPUT>
-
-Options:
-  -i, --from <FROM>                Existing project to turn into a template
-  -o, --output <OUTPUT>            Putput path where the template/skeleton should be created
-  -e, --empty                      Generate an empty template skeleton
-  -t, --template <TEMPLATE>        Optional template id
-  -n, --name <NAME>                Optional template name
-  -s, --description <DESCRIPTION>  Optional template description
-  -a, --var <VARS>                 Template variables in `key=value` form
-  -f, --force                      Force conflicting file overwrites?
-  -h, --help                       Print help
-  -V, --version                    Print version
-```
-
-> 🔔 **Note:** `create` command is a work in progress. currently it is equivalent to the `init` command.
-
 ---
 
 ## Templates
@@ -201,8 +87,6 @@ Options:
 Each template contains 2 things:
 1. `zappy.toml` template manifest file,
 2. source root directory containing template files.
-
-For info about templates and it's manifest file see [manifest docs](docs/manifest.md).
 
 ### Built-in templates
 
@@ -213,32 +97,6 @@ For info about templates and it's manifest file see [manifest docs](docs/manifes
 | `lua-cli` | Lua CLI app | `lua` | Luarock-bundled Lua-based CLI application using argparse |
 | `nvim-plugin` | Neovim plugin | `lua` | Neovim editor plugin for its lazy.nvim package manager |
 | `rust-cli` | Rust CLI app | `rust` | Rust-based CLI application using clap |
-
-### Template structure
-
-TBD
-
-### Placeholders and variables
-
-TBD
-
-### Hooks
-
-TBD
-
-### Template registries
-
-TBD
-
-### User templates
-
-TBD
-
----
-
-## Config file
-
-TBD
 
 ---
 

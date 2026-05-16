@@ -44,6 +44,9 @@ run *FLAGS:
 build *FLAGS:
     cargo build --workspace --release {{FLAGS}}
 
+build-windows *FLAGS:
+    cargo build --workspace --release --target x86_64-pc-windows-gnu {{FLAGS}}
+
 # Cleans rust build artifacts.
 clean:
     cargo clean
@@ -139,8 +142,8 @@ book-check:
 
 # Generate Rust docs and the book.
 docs-all:
-    cargo doc --no-deps --all-features --document-private-items --workspace
-    mdbook build docs/book
+    @just docs
+    @just book
 
 docker-build:
     #!/usr/bin/env bash
@@ -165,6 +168,8 @@ docker-build:
 init:
     echo # installing nightly channel
     rustup install nightly
+    echo # installing x86_64-pc-windows-gnu for cross-compilation
+    rustup target add x86_64-pc-windows-gnu
     echo # installing cargo-binstall for faster setup time
     cargo binstall -V || cargo install cargo-binstall
     echo # things required by test recipes
