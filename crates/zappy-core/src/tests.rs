@@ -991,3 +991,461 @@ name = "Builtin Test"
         Some(&String::from("MyCoolTool")),
     );
 }
+
+#[test]
+fn rejects_template_id_starting_with_digit() {
+    let source = r#"
+[template]
+id = "1rust-cli"
+name = "Rust CLI"
+"#;
+
+    let err = Manifest::from_toml_str(source, "zappy.toml")
+        .expect_err("template id starting with a digit should fail");
+
+    assert!(err.to_string().contains("template.id"));
+    assert!(err.to_string().contains("must start"));
+}
+
+#[test]
+fn rejects_source_root_with_parent_component() {
+    let source = r#"
+[template]
+id = "rust-cli"
+name = "Rust CLI"
+
+[template.source]
+root = "../template"
+"#;
+
+    let err = Manifest::from_toml_str(source, "zappy.toml")
+        .expect_err("source root with parent component should fail");
+
+    assert!(err.to_string().contains("template.source.root"));
+    assert!(err.to_string().contains("must not contain `..`"));
+}
+
+#[test]
+fn rejects_empty_items_in_path_lists() {
+    let source = r#"
+[template]
+id = "rust-cli"
+name = "Rust CLI"
+
+[paths]
+exclude = ["target", " "]
+"#;
+
+    let err = Manifest::from_toml_str(source, "zappy.toml")
+        .expect_err("empty path list item should fail");
+
+    assert!(err.to_string().contains("paths.exclude"));
+    assert!(err.to_string().contains("empty string entries"));
+}
+
+#[test]
+fn load_manifest_from_missing_path_reports_read_error() {
+    let err = Manifest::load_from_path("missing-zappy.toml")
+        .expect_err("missing manifest path should fail");
+
+    assert!(matches!(err, crate::CoreError::ReadManifest { .. }));
+}
+
+#[test]
+fn rejects_empty_conditional_when_field() {
+    let source = r#"
+[template]
+id = "rust-cli"
+name = "Rust CLI"
+
+[[conditionals]]
+path = "optional.md"
+when = " "
+"#;
+
+    let err = Manifest::from_toml_str(source, "zappy.toml")
+        .expect_err("empty conditional when should fail");
+
+    assert!(err.to_string().contains("when"));
+    assert!(err.to_string().contains("must not be empty"));
+}
+
+#[test]
+fn rejects_empty_source_root() {
+    let source = r#"
+[template]
+id = "rust-cli"
+name = "Rust CLI"
+
+[template.source]
+root = " "
+"#;
+
+    let err =
+        Manifest::from_toml_str(source, "zappy.toml").expect_err("empty source root should fail");
+
+    assert!(err.to_string().contains("template.source.root"));
+    assert!(err.to_string().contains("must not be empty"));
+}
+
+#[test]
+fn rejects_template_id_with_invalid_character() {
+    let source = r#"
+[template]
+id = "rust.cli"
+name = "Rust CLI"
+"#;
+
+    let err = Manifest::from_toml_str(source, "zappy.toml")
+        .expect_err("template id with invalid character should fail");
+
+    assert!(err.to_string().contains("template.id"));
+    assert!(err.to_string().contains("may only contain"));
+}
+
+#[test]
+fn rejects_empty_validation_setup_hook_command() {
+    let source = r#"
+[template]
+id = "rust-cli"
+name = "Rust CLI"
+
+[validation]
+
+[[validation.setup]]
+command = " "
+"#;
+
+    let err = Manifest::from_toml_str(source, "zappy.toml")
+        .expect_err("empty validation setup hook command should fail");
+
+    assert!(err.to_string().contains("validation.setup[0]"));
+    assert!(err.to_string().contains("hook command"));
+}
+
+#[test]
+fn parses_validation_setup_and_teardown_hooks() {
+    let source = r#"
+[template]
+id = "rust-cli"
+name = "Rust CLI"
+
+[variables.test_project_name]
+default = "my-tool"
+
+[validation]
+output_dir_name = "validation-output"
+
+[validation.variables]
+test_project_name = "checked-tool"
+
+[[validation.setup]]
+name = "Setup"
+command = "cargo"
+args = ["fetch"]
+
+[[validation.teardown]]
+name = "Cleanup"
+command = "cargo"
+args = ["clean"]
+optional = true
+"#;
+
+    let manifest = Manifest::from_toml_str(source, "zappy.toml")
+        .expect("validation setup and teardown hooks should parse");
+
+    let validation = manifest.validation.expect("validation should exist");
+
+    assert_eq!(
+        validation.output_dir_name.as_deref(),
+        Some("validation-output")
+    );
+    assert_eq!(validation.setup.len(), 1);
+    assert_eq!(validation.teardown.len(), 1);
+    assert_eq!(
+        validation
+            .setup
+            .first()
+            .expect("should contain 1 element")
+            .args,
+        ["fetch"]
+    );
+    assert!(
+        validation
+            .teardown
+            .first()
+            .expect("should contain 1 element")
+            .optional
+    );
+}
+
+#[test]
+fn rejects_invalid_hook_working_dir() {
+    let source = r#"
+[template]
+id = "rust-cli"
+name = "Rust CLI"
+
+[[hooks.pre_generate]]
+command = "cargo"
+working_dir = "../outside"
+"#;
+
+    let err = Manifest::from_toml_str(source, "zappy.toml")
+        .expect_err("hook working dir with parent component should fail");
+
+    assert!(err.to_string().contains("hooks.pre_generate[0]"));
+    assert!(err.to_string().contains("hook working dir"));
+}
+
+#[test]
+fn parses_hook_env_when_and_shell_flags() {
+    let source = r#"
+[template]
+id = "rust-cli"
+name = "Rust CLI"
+
+[[hooks.post_generate]]
+name = "Install"
+command = "cargo"
+args = ["build"]
+working_dir = "generated"
+when = "run_build"
+optional = true
+shell = true
+
+[hooks.post_generate.env]
+RUST_LOG = "debug"
+"#;
+
+    let manifest =
+        Manifest::from_toml_str(source, "zappy.toml").expect("hook env and flags should parse");
+    let hook = manifest
+        .hooks
+        .post_generate
+        .first()
+        .expect("hook should exist");
+
+    assert_eq!(hook.name.as_deref(), Some("Install"));
+    assert_eq!(hook.when.as_deref(), Some("run_build"));
+    assert_eq!(
+        hook.working_dir.as_deref(),
+        Some(camino::Utf8Path::new("generated"))
+    );
+    assert_eq!(hook.env.get("RUST_LOG"), Some(&String::from("debug")));
+    assert!(hook.optional);
+    assert!(hook.shell);
+}
+
+#[test]
+fn builtin_helpers_filter_unknown_names_and_generate_all_placeholders() {
+    let mut values = VariableValueMap::new();
+    values.insert(
+        String::from(crate::builtins::PROJECT_NAME),
+        VariableValue::String(String::from("My Cool Tool")),
+    );
+    values.insert(
+        String::from("not_builtin"),
+        VariableValue::String(String::from("ignored")),
+    );
+
+    assert!(!crate::builtins::are_builtin_names(&values));
+
+    let transformations = crate::builtins::builtin_transformations(&values);
+
+    assert!(transformations.contains_key(crate::builtins::PROJECT_NAME));
+    assert!(!transformations.contains_key("not_builtin"));
+    assert_eq!(
+        transformations
+            .get(crate::builtins::PROJECT_NAME)
+            .and_then(|transforms| transforms.get(&TransformKind::ScreamingSnake)),
+        Some(&String::from("MY_COOL_TOOL")),
+    );
+
+    let replacements = crate::builtins::builtin_replacements(&values);
+
+    assert_eq!(
+        replacements.get("__ZAPPY_PROJECT_NAME_CAMEL__"),
+        Some(&String::from("myCoolTool")),
+    );
+    assert_eq!(
+        replacements.get("__ZAPPY_PROJECT_NAME_SCREAMING__"),
+        Some(&String::from("MY_COOL_TOOL")),
+    );
+    assert_eq!(
+        crate::builtins::builtin_placeholder(crate::builtins::EMAIL, TransformKind::Lower),
+        "__ZAPPY_EMAIL_LOWER__",
+    );
+}
+
+#[test]
+fn builtin_name_helpers_accept_only_known_builtin_maps() {
+    let mut builtins = VariableValueMap::new();
+
+    for name in crate::builtins::BUILTIN_NAMES {
+        builtins.insert(
+            String::from(*name),
+            VariableValue::String(String::from("value")),
+        );
+    }
+
+    assert!(crate::builtins::are_builtin_names(&builtins));
+}
+
+#[test]
+fn parses_cli_override_boolean_aliases_and_negative_integers() {
+    let overrides = parse_variable_overrides([
+        "yes_value=yes",
+        "uppercase_yes=Y",
+        "no_value=no",
+        "uppercase_no=N",
+        "one_value=1",
+        "zero_value=0",
+        "negative=-3",
+    ])
+    .expect("overrides should parse");
+
+    assert_eq!(overrides.get("yes_value"), Some(&VariableValue::Bool(true)));
+    assert_eq!(
+        overrides.get("uppercase_yes"),
+        Some(&VariableValue::Bool(true)),
+    );
+    assert_eq!(overrides.get("no_value"), Some(&VariableValue::Bool(false)));
+    assert_eq!(
+        overrides.get("uppercase_no"),
+        Some(&VariableValue::Bool(false)),
+    );
+    assert_eq!(overrides.get("one_value"), Some(&VariableValue::Bool(true)));
+    assert_eq!(
+        overrides.get("zero_value"),
+        Some(&VariableValue::Bool(false))
+    );
+    assert_eq!(overrides.get("negative"), Some(&VariableValue::Integer(-3)));
+}
+
+#[test]
+fn rejects_cli_override_with_invalid_variable_name() {
+    let err = parse_variable_overrides(["bad-name=value"])
+        .expect_err("invalid variable override name should fail");
+
+    assert!(err.to_string().contains("bad-name"));
+}
+
+#[test]
+fn declared_builtin_value_is_replaced_by_injected_builtin() {
+    let manifest = Manifest::from_toml_str(
+        r#"
+[template]
+id = "builtin-precedence"
+name = "Builtin Precedence"
+
+[variables.test_project_name]
+default = "declared"
+"#,
+        "zappy.toml",
+    )
+    .expect("manifest should parse");
+
+    let mut explicit = VariableValueMap::new();
+    explicit.insert(
+        String::from("test_project_name"),
+        VariableValue::String(String::from("explicit-value")),
+    );
+
+    let mut builtins = VariableValueMap::new();
+    builtins.insert(
+        String::from(crate::builtins::PROJECT_NAME),
+        VariableValue::String(String::from("builtin-value")),
+    );
+
+    let resolved = resolve_variables(
+        &manifest.variables,
+        &VariableResolutionInput {
+            builtins,
+            explicit,
+            ..VariableResolutionInput::default()
+        },
+    )
+    .expect("variables should resolve");
+
+    assert_eq!(
+        resolved.values.get("test_project_name"),
+        Some(&VariableValue::String(String::from("explicit-value"))),
+    );
+    assert_eq!(
+        resolved.values.get(crate::builtins::PROJECT_NAME),
+        Some(&VariableValue::String(String::from("builtin-value"))),
+    );
+}
+
+#[test]
+fn unknown_builtin_input_fails() {
+    let manifest = Manifest::from_toml_str(
+        r#"
+[template]
+id = "unknown-builtin"
+name = "Unknown Builtin"
+"#,
+        "zappy.toml",
+    )
+    .expect("manifest should parse");
+
+    let mut builtins = VariableValueMap::new();
+    builtins.insert(
+        String::from("not_a_builtin"),
+        VariableValue::String(String::from("value")),
+    );
+
+    let err = resolve_variables(
+        &manifest.variables,
+        &VariableResolutionInput {
+            builtins,
+            ..VariableResolutionInput::default()
+        },
+    )
+    .expect_err("unknown builtin value should fail");
+
+    assert!(err.to_string().contains("not_a_builtin"));
+}
+
+#[test]
+fn evaluates_conditions_only_for_true_boolean_values() {
+    let mut values = VariableValueMap::new();
+    values.insert(String::from("enabled"), VariableValue::Bool(true));
+    values.insert(String::from("disabled"), VariableValue::Bool(false));
+    values.insert(
+        String::from("stringy"),
+        VariableValue::String(String::from("true")),
+    );
+    values.insert(String::from("integer"), VariableValue::Integer(1));
+
+    assert!(crate::condition::evaluate_condition("enabled", &values));
+    assert!(!crate::condition::evaluate_condition("disabled", &values));
+    assert!(!crate::condition::evaluate_condition("stringy", &values));
+    assert!(!crate::condition::evaluate_condition("integer", &values));
+    assert!(!crate::condition::evaluate_condition("missing", &values));
+}
+
+#[test]
+fn render_text_preserves_missing_placeholders_and_applies_in_order() {
+    let mut replacements = indexmap::IndexMap::new();
+    replacements.insert(String::from("__NAME__"), String::from("my-tool"));
+    replacements.insert(String::from("my-tool"), String::from("renamed-tool"));
+
+    let rendered = crate::render::render_text("__NAME__ uses __MISSING__", &replacements);
+
+    assert_eq!(rendered, "renamed-tool uses __MISSING__");
+}
+
+#[test]
+fn rejects_empty_and_absolute_rendered_paths() {
+    let replacements = indexmap::IndexMap::new();
+
+    let empty = crate::render::render_relative_path(" ", &replacements)
+        .expect_err("empty rendered path should fail");
+    assert!(empty.to_string().contains("must not be empty"));
+
+    let absolute = crate::render::render_relative_path("/tmp/project", &replacements)
+        .expect_err("absolute rendered path should fail");
+    assert!(absolute.to_string().contains("must be relative"));
+}

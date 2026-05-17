@@ -12,7 +12,7 @@ use zappy_hooks::{ExecuteHooksInput, HookPhase, execute_hooks};
 use zappy_templates::ensure_bundled_templates_available;
 
 /// Constructs discovery config.
-pub(super) fn discovery_config(templates_dir: Option<PathBuf>) -> DiscoveryConfig {
+pub fn discovery_config(templates_dir: Option<PathBuf>) -> DiscoveryConfig {
     let bundled_templates_dir = if templates_dir.is_some() {
         None
     } else {
@@ -182,7 +182,7 @@ impl DateParts {
 }
 
 /// Constructs command built-in variables.
-pub(super) fn command_builtins(project_name: String) -> VariableValueMap {
+pub fn command_builtins(project_name: String) -> VariableValueMap {
     let mut builtins = VariableValueMap::new();
 
     let date = DateParts::new();
