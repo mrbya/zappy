@@ -1,17 +1,14 @@
-# Zappy
+# Zappy - Electrifying project templating engine.
 [![crates.io](https://img.shields.io/crates/v/zappy.svg)](https://crates.io/crates/zappy)
 [![docs.rs](https://img.shields.io/docsrs/zappy)](https://docs.rs/zappy)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 [![pipeline](https://gitlab.com/byacrates/nishikaze/badges/master/pipeline.svg)](https://gitlab.com/byacrates/nishikaze/-/commits/master)
 [![coverage report](https://gitlab.com/byacrates/zappy/badges/master/coverage.svg)](https://gitlab.com/byacrates/zappy/-/commits/master)
 
-> Electrifying project templating/scaffolding engine.
-
 `Zappy` is a project templating/scaffolding engine written in Rust to generate projects from a multitude of pre-defined templates. It also allows the user to create their own templates or generate ones from an existing project.
 
-> **Note:** This project is a re-implementation of the [zappy](https://gitlab.com/byarocks/zappy) luarock and takes heavy inspiration from the [spawn_point](https://github.com/normano/spawnpoint/tree/main) crate.
 
-To find out more read [Zappy Book](TBA).
+To find out more read [Zappy Book](https://byacrates.gitlab.io/zappy).
 
 <!-- toc -->
 
@@ -27,7 +24,7 @@ To find out more read [Zappy Book](TBA).
   * [Common commands:](#common-commands)
   * [Coverage and benchmarks](#coverage-and-benchmarks)
 - [Documentation](#documentation)
-  * [Style](#style)
+  * [Structure](#structure)
 - [Similar projects](#similar-projects)
 - [License](#license)
 - [Repository maturity note](#repository-maturity-note)
@@ -184,15 +181,18 @@ just ci
 
 ## Documentation
 
-TBD
+For user docs refer to our [Zappy Book](https://byacrates.gitlab.io/zappy).
+For API docs see [docs.rs](https://docs.rs/zappy).
 
-### Style
+### Structure
 
+User-facing docs live in `docs/book/`.
 Codebase documented using a consistent rustdoc style described in [rustdoc style guide](dev/docs/rustdoc_style.md).
+Misc dev docs live in `docs/dev/`
 
 ## Similar projects
-- [Zappy luarock](https://gitlab.com/byarocks/zappy)
-- [Spawnpoint](https://github.com/normano/spawnpoint)
+
+This project started as a re-implementation of the [zappy](https://gitlab.com/byarocks/zappy) luarock and takes heavy inspiration from the [spawn_point](https://github.com/normano/spawnpoint/tree/main) crate.
 
 ---
 
