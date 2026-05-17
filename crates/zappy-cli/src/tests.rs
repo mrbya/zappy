@@ -1,9 +1,23 @@
+use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::ExitCode;
 
 use clap::Parser;
 use zappy_core::{VariableValue, parse_variable_overrides};
 
 use crate::cli::{Cli, Command, CreateArgs, InfoArgs, InitArgs, ListArgs, NewArgs, ValidateArgs};
+
+fn write_cli_template(templates_root: &Path, dir_name: &str, manifest: &str) -> PathBuf {
+    let template_dir = templates_root.join(dir_name);
+    let source_dir = template_dir.join("template");
+
+    fs::create_dir_all(&source_dir).expect("template source dir should be created");
+    fs::write(template_dir.join("zappy.toml"), manifest).expect("manifest should be written");
+    fs::write(source_dir.join("README.md"), "# __NAME__\n")
+        .expect("template file should be written");
+
+    template_dir
+}
 
 #[test]
 fn parses_verbosity_count() {
@@ -118,6 +132,27 @@ fn parses_new_command_with_all_flags() {
     assert!(args.dry_run);
     assert!(args.non_interactive);
     assert!(args.force);
+    assert!(!args.no_hooks);
+}
+
+#[test]
+fn parses_new_no_hooks_flag() {
+    let cli = Cli::try_parse_from([
+        "zappy",
+        "new",
+        "--template",
+        "rust-cli",
+        "--name",
+        "my-tool",
+        "--no-hooks",
+    ])
+    .expect("new no-hooks flag should parse");
+
+    let Command::New(args) = cli.command else {
+        panic!("expected new command");
+    };
+
+    assert!(args.no_hooks);
 }
 
 #[test]
@@ -197,6 +232,19 @@ fn parses_validate_command() {
     assert_eq!(args.template, "rust-cli");
     assert_eq!(args.templates_dir.as_deref(), Some(Path::new("templates")));
     assert!(args.keep_temp);
+    assert!(!args.no_hooks);
+}
+
+#[test]
+fn parses_validate_no_hooks_flag() {
+    let cli = Cli::try_parse_from(["zappy", "validate", "-t", "rust-cli", "--no-hooks"])
+        .expect("validate no-hooks flag should parse");
+
+    let Command::Validate(args) = cli.command else {
+        panic!("expected validate command");
+    };
+
+    assert!(args.no_hooks);
 }
 
 #[test]
@@ -216,14 +264,30 @@ fn rejects_validate_without_template() {
 
 #[test]
 fn parses_init_command() {
-    let cli = Cli::try_parse_from(["zappy", "init", "--output", "templates/rust-cli"])
-        .expect("init command should parse");
+    let cli = Cli::try_parse_from([
+        "zappy",
+        "init",
+        "--output",
+        "templates/rust-cli",
+        "--template",
+        "rust-cli",
+        "--name",
+        "Rust CLI",
+        "--description",
+        "Rust CLI template",
+        "--force",
+    ])
+    .expect("init command should parse");
 
     let Command::Init(args) = cli.command else {
         panic!("expected init command");
     };
 
     assert_eq!(args.output, PathBuf::from("templates/rust-cli"));
+    assert_eq!(args.template.as_deref(), Some("rust-cli"));
+    assert_eq!(args.name.as_deref(), Some("Rust CLI"));
+    assert_eq!(args.description.as_deref(), Some("Rust CLI template"));
+    assert!(args.force);
 }
 
 #[test]
@@ -288,6 +352,9 @@ fn parses_create_command_empty_template() {
         "rust-cli",
         "--description",
         "Rust CLI template",
+        "--name",
+        "Rust CLI",
+        "--force",
         "-o",
         "output_dir",
     ])
@@ -299,7 +366,9 @@ fn parses_create_command_empty_template() {
 
     assert!(args.empty);
     assert_eq!(args.template.as_deref(), Some("rust-cli"));
+    assert_eq!(args.name.as_deref(), Some("Rust CLI"));
     assert_eq!(args.description.as_deref(), Some("Rust CLI template"));
+    assert!(args.force);
 }
 
 #[test]
@@ -364,4 +433,237 @@ fn rejects_cli_variable_override_with_empty_key() {
         parse_variable_overrides(["=my-tool"]).expect_err("override with empty key should fail");
 
     assert!(err.to_string().contains("key=value"));
+}
+
+#[test]
+fn command_builtins_include_project_name_and_dates() {
+    let builtins = crate::commands::helpers::command_builtins(String::from("my-tool"));
+
+    assert_eq!(
+        builtins.get(zappy_core::builtins::PROJECT_NAME),
+        Some(&VariableValue::String(String::from("my-tool"))),
+    );
+
+    for name in [
+        zappy_core::builtins::USER,
+        zappy_core::builtins::EMAIL,
+        zappy_core::builtins::DATE,
+        zappy_core::builtins::DAY,
+        zappy_core::builtins::MONTH,
+        zappy_core::builtins::YEAR,
+    ] {
+        assert!(builtins.contains_key(name));
+    }
+}
+
+#[test]
+fn discovery_config_disables_bundled_templates_for_explicit_dir() {
+    let config = crate::commands::helpers::discovery_config(Some(PathBuf::from("templates")));
+
+    assert_eq!(config.templates_dir, Some(PathBuf::from("templates")));
+    assert_eq!(config.bundled_templates_dir, None);
+}
+
+#[test]
+fn list_command_succeeds_for_empty_explicit_directory() {
+    let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+
+    let result = crate::commands::list(&ListArgs {
+        templates_dir: Some(temp_dir.path().to_path_buf()),
+        language: None,
+    });
+
+    assert_eq!(result, ExitCode::SUCCESS);
+}
+
+#[test]
+fn list_command_fails_for_missing_explicit_directory() {
+    let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+
+    let result = crate::commands::list(&ListArgs {
+        templates_dir: Some(temp_dir.path().join("missing")),
+        language: None,
+    });
+
+    assert_eq!(result, ExitCode::FAILURE);
+}
+
+#[test]
+fn info_command_fails_for_unknown_template() {
+    let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+
+    let result = crate::commands::info(&InfoArgs {
+        template: String::from("missing"),
+        templates_dir: Some(temp_dir.path().to_path_buf()),
+    });
+
+    assert_eq!(result, ExitCode::FAILURE);
+}
+
+#[test]
+fn init_command_creates_template_skeleton() {
+    let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+    let output = temp_dir.path().join("rust-cli");
+
+    let result = crate::commands::init_template(&InitArgs {
+        output: output.clone(),
+        template: Some(String::from("rust-cli")),
+        name: Some(String::from("Rust CLI")),
+        description: Some(String::from("Rust CLI template")),
+        force: false,
+    });
+
+    assert_eq!(result, ExitCode::SUCCESS);
+    assert!(output.join("zappy.toml").exists());
+}
+
+#[test]
+fn init_command_fails_for_existing_template_without_force() {
+    let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+    let output = temp_dir.path().join("rust-cli");
+    let args = InitArgs {
+        output,
+        template: Some(String::from("rust-cli")),
+        name: None,
+        description: None,
+        force: false,
+    };
+
+    assert_eq!(crate::commands::init_template(&args), ExitCode::SUCCESS);
+    assert_eq!(crate::commands::init_template(&args), ExitCode::FAILURE);
+}
+
+#[test]
+fn create_empty_command_creates_template_skeleton() {
+    let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+    let output = temp_dir.path().join("rust-cli");
+
+    let result = crate::commands::create(&CreateArgs {
+        from: None,
+        output: output.clone(),
+        empty: true,
+        template: Some(String::from("rust-cli")),
+        name: Some(String::from("Rust CLI")),
+        description: Some(String::from("Rust CLI template")),
+        vars: Vec::new(),
+        force: false,
+    });
+
+    assert_eq!(result, ExitCode::SUCCESS);
+    assert!(output.join("zappy.toml").exists());
+}
+
+#[test]
+fn create_non_empty_stub_returns_success() {
+    let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+
+    let result = crate::commands::create(&CreateArgs {
+        from: Some(temp_dir.path().join("project")),
+        output: temp_dir.path().join("template"),
+        empty: false,
+        template: Some(String::from("rust-cli")),
+        name: None,
+        description: None,
+        vars: vec![String::from("name=value")],
+        force: false,
+    });
+
+    assert_eq!(result, ExitCode::SUCCESS);
+}
+
+#[test]
+fn new_command_fails_for_invalid_variable_override() {
+    let result = crate::commands::new(&NewArgs {
+        template: String::from("rust-cli"),
+        project_name: String::from("my-tool"),
+        output: None,
+        vars: vec![String::from("invalid")],
+        templates_dir: None,
+        dry_run: false,
+        non_interactive: false,
+        force: false,
+        no_hooks: false,
+    });
+
+    assert_eq!(result, ExitCode::FAILURE);
+}
+
+#[test]
+fn new_command_fails_for_unknown_template_in_explicit_dir() {
+    let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+
+    let result = crate::commands::new(&NewArgs {
+        template: String::from("missing"),
+        project_name: String::from("my-tool"),
+        output: None,
+        vars: Vec::new(),
+        templates_dir: Some(temp_dir.path().to_path_buf()),
+        dry_run: true,
+        non_interactive: false,
+        force: false,
+        no_hooks: false,
+    });
+
+    assert_eq!(result, ExitCode::FAILURE);
+}
+
+#[test]
+fn new_command_dry_run_succeeds_with_explicit_template() {
+    let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+    let output_dir = temp_dir.path().join("out");
+
+    write_cli_template(
+        temp_dir.path(),
+        "rust-cli",
+        r#"
+[template]
+id = "rust-cli"
+name = "Rust CLI"
+
+[variables.name]
+default = "my-tool"
+
+[variables.name.placeholders]
+raw = "__NAME__"
+"#,
+    );
+
+    let result = crate::commands::new(&NewArgs {
+        template: String::from("rust-cli"),
+        project_name: String::from("my-tool"),
+        output: Some(output_dir.clone()),
+        vars: Vec::new(),
+        templates_dir: Some(temp_dir.path().to_path_buf()),
+        dry_run: true,
+        non_interactive: false,
+        force: false,
+        no_hooks: false,
+    });
+
+    assert_eq!(result, ExitCode::SUCCESS);
+    assert!(!output_dir.exists());
+}
+
+#[test]
+fn validate_command_fails_without_validation_config() {
+    let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+
+    write_cli_template(
+        temp_dir.path(),
+        "rust-cli",
+        r#"
+[template]
+id = "rust-cli"
+name = "Rust CLI"
+"#,
+    );
+
+    let result = crate::commands::validate(&ValidateArgs {
+        template: String::from("rust-cli"),
+        templates_dir: Some(temp_dir.path().to_path_buf()),
+        keep_temp: false,
+        no_hooks: false,
+    });
+
+    assert_eq!(result, ExitCode::FAILURE);
 }

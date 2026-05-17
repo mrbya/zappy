@@ -510,3 +510,334 @@ fn zappy_should_see_builtin_templates() {
         .success()
         .stdout(predicates::str::contains("rust-cli"));
 }
+
+#[test]
+fn explicit_empty_templates_dir_disables_bundled_discovery() {
+    let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args([
+            "list",
+            "--templates-dir",
+            temp_dir.path().to_str().expect("path should be utf-8"),
+        ])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("No templates found."))
+        .stdout(predicates::str::contains("rust-cli").not());
+}
+
+#[test]
+fn missing_explicit_templates_dir_fails_clearly() {
+    let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+    let missing = temp_dir.path().join("missing");
+
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args([
+            "list",
+            "--templates-dir",
+            missing.to_str().expect("path should be utf-8"),
+        ])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("template search path"))
+        .stderr(predicates::str::contains("does not exist"));
+}
+
+#[test]
+fn new_fails_for_unknown_template_id() {
+    let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args([
+            "new",
+            "--template",
+            "missing",
+            "--name",
+            "my-tool",
+            "--templates-dir",
+            temp_dir.path().to_str().expect("path should be utf-8"),
+            "--dry-run",
+        ])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(
+            "template `missing` was not found",
+        ));
+}
+
+#[test]
+fn validate_fails_for_unknown_template_id() {
+    let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args([
+            "validate",
+            "--template",
+            "missing",
+            "--templates-dir",
+            temp_dir.path().to_str().expect("path should be utf-8"),
+        ])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(
+            "template `missing` was not found",
+        ));
+}
+
+#[test]
+fn new_fails_when_required_variable_is_missing() {
+    let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+    let template_dir = temp_dir.path().join("required-template");
+
+    fs::create_dir_all(template_dir.join("template")).expect("template dir should be created");
+    fs::write(
+        template_dir.join("zappy.toml"),
+        r#"
+[template]
+id = "required-template"
+name = "Required Template"
+
+[variables.required_value]
+required = true
+prompt = "Required value"
+"#,
+    )
+    .expect("manifest should be written");
+    fs::write(template_dir.join("template/README.md"), "# README\n")
+        .expect("template file should be written");
+
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args([
+            "new",
+            "--template",
+            "required-template",
+            "--name",
+            "my-tool",
+            "--templates-dir",
+            temp_dir.path().to_str().expect("path should be utf-8"),
+            "--dry-run",
+        ])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("required_value"));
+}
+
+#[test]
+fn new_fails_on_output_conflict_without_force() {
+    let output = tempfile::TempDir::new().expect("output tempdir should be created");
+    let project_dir = output.path().join("my-tool");
+
+    fs::create_dir_all(&project_dir).expect("project dir should be created");
+    fs::write(project_dir.join("README.md"), "existing").expect("conflict should be written");
+
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args([
+            "new",
+            "--template",
+            "test-template",
+            "--templates-dir",
+            "tests/fixtures/templates",
+            "--name",
+            "my-tool",
+            "--var",
+            "test_var=my cool tool",
+            "--output",
+        ])
+        .arg(&project_dir)
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("already exists"));
+}
+
+#[test]
+fn new_no_hooks_skips_failing_generation_hook() {
+    let templates = tempfile::TempDir::new().expect("templates tempdir should be created");
+    let output = tempfile::TempDir::new().expect("output tempdir should be created");
+    let template_dir = templates.path().join("hook-template");
+    let project_dir = output.path().join("my-tool");
+
+    fs::create_dir_all(template_dir.join("template")).expect("template dir should be created");
+    fs::write(template_dir.join("template/README.md"), "# Hook Template\n")
+        .expect("template file should be written");
+    fs::write(
+        template_dir.join("zappy.toml"),
+        r#"
+[template]
+id = "hook-template"
+name = "Hook Template"
+
+[[hooks.post_generate]]
+name = "Failing hook"
+command = "zappy-definitely-missing-command"
+"#,
+    )
+    .expect("manifest should be written");
+
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args([
+            "new",
+            "--template",
+            "hook-template",
+            "--name",
+            "my-tool",
+            "--templates-dir",
+            templates.path().to_str().expect("path should be utf-8"),
+            "--output",
+        ])
+        .arg(&project_dir)
+        .arg("--no-hooks")
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("Generated `hook-template`"));
+
+    assert!(project_dir.join("README.md").exists());
+}
+
+#[test]
+fn validate_fails_when_validation_step_fails() {
+    let templates = tempfile::TempDir::new().expect("templates tempdir should be created");
+    let template_dir = templates.path().join("bad-validation");
+
+    fs::create_dir_all(template_dir.join("template")).expect("template dir should be created");
+    fs::write(
+        template_dir.join("template/README.md"),
+        "# Bad Validation\n",
+    )
+    .expect("template file should be written");
+    fs::write(
+        template_dir.join("zappy.toml"),
+        r#"
+[template]
+id = "bad-validation"
+name = "Bad Validation"
+
+[validation]
+
+[[validation.steps]]
+name = "Fail"
+command = "rustc"
+args = ["--definitely-not-a-rustc-flag"]
+"#,
+    )
+    .expect("manifest should be written");
+
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args([
+            "validate",
+            "--template",
+            "bad-validation",
+            "--templates-dir",
+            templates.path().to_str().expect("path should be utf-8"),
+        ])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("Fail"));
+}
+
+#[test]
+fn validate_no_hooks_skips_failing_generation_hook() {
+    let templates = tempfile::TempDir::new().expect("templates tempdir should be created");
+    let template_dir = templates.path().join("validate-no-hooks");
+
+    fs::create_dir_all(template_dir.join("template")).expect("template dir should be created");
+    fs::write(
+        template_dir.join("template/README.md"),
+        "# Validate No Hooks\n",
+    )
+    .expect("template file should be written");
+    fs::write(
+        template_dir.join("zappy.toml"),
+        r#"
+[template]
+id = "validate-no-hooks"
+name = "Validate No Hooks"
+
+[[hooks.post_generate]]
+name = "Failing generation hook"
+command = "zappy-definitely-missing-command"
+
+[validation]
+
+[[validation.setup]]
+name = "Setup"
+command = "rustc"
+args = ["--version"]
+
+[[validation.steps]]
+name = "Step"
+command = "rustc"
+args = ["--version"]
+
+[[validation.teardown]]
+name = "Teardown"
+command = "rustc"
+args = ["--version"]
+"#,
+    )
+    .expect("manifest should be written");
+
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args([
+            "validate",
+            "--template",
+            "validate-no-hooks",
+            "--templates-dir",
+            templates.path().to_str().expect("path should be utf-8"),
+            "--no-hooks",
+        ])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains(
+            "Template `validate-no-hooks` validated successfully.",
+        ));
+}
+
+#[test]
+fn create_non_empty_reports_current_stub() {
+    let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+    let source_dir = temp_dir.path().join("project");
+    let output_dir = temp_dir.path().join("template");
+
+    fs::create_dir_all(&source_dir).expect("source project should be created");
+
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args(["create", "--from"])
+        .arg(&source_dir)
+        .args(["--template", "stub-template", "--output"])
+        .arg(&output_dir)
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("zappy create: stub"));
+}
+
+#[test]
+fn init_fails_for_existing_template_without_force() {
+    let temp_dir = tempfile::TempDir::new().expect("tempdir should be created");
+    let output_dir = temp_dir.path().join("rust-cli");
+
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args(["init", "--output"])
+        .arg(&output_dir)
+        .assert()
+        .success();
+
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args(["init", "--output"])
+        .arg(&output_dir)
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("already exists"));
+}
