@@ -98,8 +98,8 @@ args = ["-c", "cargo nextest -V || cargo install carg-nextest"]
 
 [[validation.setup]]
 name = "rustup add llvm tools"
-command = "rustup"
-args = ["component", "add", "llvm-tools-preview"]
+command = "sh"
+args = ["-c", "rustup component list --installed | grep llvm || component add llvm-tools-preview"]
 
 [[validation.setup]]
 name = "install llvm-cov"

@@ -45,10 +45,9 @@ test:
 validate:
   stage: validate
   rules:
-    - changes:
-      - crates/zappy-templates/templates/*
-      - crates/zappy-templates/templates/**/*
+    changes:
       - crates/zappy-templates/src/**/*
+      - crates/zappy-templates/templates/**/*
       - crates/zappy-templates/build.rs
       - crates/zappy-templates/Cargo.toml
   script:
