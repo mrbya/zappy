@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to dkbls are documented in this file.
+All notable changes to __PROJECT_NAME_KEBAB__ are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
