@@ -23,4 +23,20 @@ RUN rustup install nightly && \
     cargo binstall mdbook --no-confirm && \
     npm install -g markdown-toc
 
+RUN pacman -S cmake ninja make --noconfirm --needed && \
+    pacman -Scc
+
+RUN pacman -S gtest --noconfirm --needed && pacman -Scc
+
+RUN pacman -S lua luarocks --noconfirm --needed && pacman -Scc
+
+RUN luarocks install --local argparse && \
+    luarocks install --local busted && \
+    luarocks install --local luacov && \
+    luarocks install --local luassert && \
+    luarocks install --local luafilesystem && \
+    luarocks install --local inspect && \
+    luarocks install --local luacheck && \
+    cargo install stylua
+
 CMD ["bash"]
