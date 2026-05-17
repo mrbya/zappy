@@ -30,13 +30,14 @@ RUN pacman -S gtest --noconfirm --needed && pacman -Scc
 
 RUN pacman -S lua luarocks --noconfirm --needed && pacman -Scc
 
-RUN luarocks install --local argparse && \
-    luarocks install --local busted && \
-    luarocks install --local luacov && \
-    luarocks install --local luassert && \
-    luarocks install --local luafilesystem && \
-    luarocks install --local inspect && \
-    luarocks install --local luacheck && \
+RUN luarocks install argparse && \
+    luarocks install busted && \
+    luarocks install luacov && \
+    luarocks install luassert && \
+    luarocks install luafilesystem && \
+    luarocks install inspect && \
     cargo install stylua
+
+RUN pacman -S luacheck --noconfirm --needed && pacman -Scc
 
 CMD ["bash"]
