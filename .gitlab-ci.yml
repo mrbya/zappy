@@ -16,12 +16,13 @@ workflow:
 
 stages:
   - test
+  - validate
   - build
   - release
   - docs
 
 cache:
-  key:
+  key: "cargo-$CI_COMMIT_REF_SLUG"
   paths:
     - ~/.cargo/registry/
     - ~/.cargo/git/
@@ -40,6 +41,15 @@ test:
       coverage_report:
         coverage_format: cobertura
         path: coverage/cobertura.xml
+
+validate:
+  stage: validate
+  rules:
+    - changes:
+        - crates/zappy-templates/templates/*
+  script:
+    - echo "Validating templates..."
+    - just test-templates
 
 build:
   stage: build
@@ -82,8 +92,8 @@ upload-release:
         - name: zappy (linux)
           url: "$CI_PROJECT_URL/-/jobs/$CI_JOB_ID/artifacts/file/release-assets/zappy"
           filepath: "/binaries/zappy"
-        - name: dkb-lsp.exe (windows)
-          url: "$CI_PROJECT_URL/-/jobs/$CI_JOB_ID/artifacts/file/release-assets/dkb-lsp.exe"
+        - name: zappy.exe (windows)
+          url: "$CI_PROJECT_URL/-/jobs/$CI_JOB_ID/artifacts/file/release-assets/zappy.exe"
           filepath: "/binaries/zappy.exe"
 
 docs:

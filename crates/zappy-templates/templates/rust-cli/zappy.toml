@@ -1,3 +1,4 @@
+# Template metadata.
 [template]
 id = "rust-cli"
 name = "Rust CLI app"
@@ -5,9 +6,11 @@ description = "Rust-based CLI application using clap."
 language = "rust"
 version = "0.1.0"
 
+# Template source directory.
 [template.source]
 root = "template"
 
+# Template variable definitions.
 [variables]
 description = {
     required = true,
@@ -41,11 +44,13 @@ use_github_actions = {
     default = false,
 }
 
+# Template file path config.
 [paths]
 exclude = [".git", ".DS_Store", "target"]
 binary_extensions = ["png", "jpg", "jpeg", "gif", "ico", "pdf", "zip"]
 binary_files = ["Cargo.lock"]
 
+# Conditional include paths.
 [[conditionals]]
 path = ".gitlab-ci.yml"
 when = "use_gitlab_ci"
@@ -58,12 +63,14 @@ when = "use_gitlab_ci"
 path = ".github/workflows/ci.yml"
 when = "use_github_actions"
 
+# Template generation hooks
 [[hooks.post_generate]]
 name = "Format codebase"
 command = "cargo"
 args = ["fmt"]
 optional = true
 
+# Template validation config.
 [validation]
 output_dir_name = "zappy-rust-cli"
 variables = {
@@ -73,17 +80,49 @@ variables = {
     use_github_actions = false,
 }
 
+# Validation setup hooks.
 [[validation.setup]]
 name = "install just"
 command = "sh"
 args = ["-c", "just -V || cargo install just"]
 
 [[validation.setup]]
-name = "bootstrap recipe"
+name = "install nextest"
+command = "rustup"
+args = ["install", "nightly"]
+
+[[validation.setup]]
+name = "install nextest"
+command = "sh"
+args = ["-c", "cargo nextest -V || cargo install carg-nextest"]
+
+[[validation.setup]]
+name = "rustup add llvm tools"
+command = "rustup"
+args = ["component", "add", "llvm-tools-preview"]
+
+[[validation.setup]]
+name = "install llvm-cov"
+command = "sh"
+args = ["-c", "cargo llvm-cov -V || cargo install cargo-llvm-cov"]
+
+[[validation.setup]]
+name = "install udeps"
+command = "sh"
+args = ["-c", "cargo udeps -V || cargo install cargo-udeps"]
+
+[[validation.setup]]
+name = "install audit"
+command = "sh"
+args = ["-c", "cargo audit -V || cargo install cargo-audit"]
+
+# Validation process steps.
+[[validation.steps]]
+name = "lint checks, audit and udeps"
 command = "just"
-args = ["init"]
+args = ["thorough-check"]
 
 [[validation.steps]]
-name = "lint checks, audit, udeps and tests"
+name = "tests"
 command = "just"
-args = ["ci"]
+args = ["test"]

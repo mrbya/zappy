@@ -69,9 +69,14 @@ command = "sh"
 args = ["-c", "just -V || cargo install just"]
 
 [[validation.setup]]
-name = "bootstrap recipe"
-command = "just"
-args = ["init"]
+name = "install luacheck"
+command = "sh"
+args = ["-c", "luarocks list --local | grep luacheck || luarocks instal --local luacheck"]
+
+[[validation.setup]]
+name = "install luacheck"
+command = "sh"
+args = ["-c", "stylua -V || cargo install stylua"]
 
 # Validation process steps.
 [[validation.steps]]
@@ -83,6 +88,3 @@ args = ["fmt", "-c"]
 name = "linter checks"
 command = "just"
 args = ["check", "--only", "0"]
-
-# Validation teardown hooks.
-# [[validation.teardown]]

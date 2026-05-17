@@ -187,8 +187,10 @@ For API docs see [docs.rs](https://docs.rs/zappy).
 ### Structure
 
 User-facing docs live in `docs/book/`.
+
 Codebase documented using a consistent rustdoc style described in [rustdoc style guide](dev/docs/rustdoc_style.md).
-Misc dev docs live in `docs/dev/`
+
+Misc dev docs live in `docs/dev/`.
 
 ## Similar projects
 

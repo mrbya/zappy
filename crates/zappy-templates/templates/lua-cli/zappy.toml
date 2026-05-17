@@ -78,15 +78,47 @@ command = "sh"
 args = ["-c", "just -V || cargo install just"]
 
 [[validation.setup]]
-name = "bootstrap recipe"
-command = "just"
-args = ["init"]
+name = "install argparse"
+command = "sh"
+args = ["-c", "luarocks list --local | grep argparse || luarocks instal --local argparse"]
+
+[[validation.setup]]
+name = "install busted"
+command = "sh"
+args = ["-c", "luarocks list --local | grep busted || luarocks instal --local busted"]
+
+[[validation.setup]]
+name = "install luacov"
+command = "sh"
+args = ["-c", "luarocks list --local | grep luacov || luarocks instal --local luacov"]
+
+[[validation.setup]]
+name = "install luassert"
+command = "sh"
+args = ["-c", "luarocks list --local | grep luassert || luarocks instal --local luassert"]
+
+[[validation.setup]]
+name = "install luafilesystem"
+command = "sh"
+args = ["-c", "luarocks list --local | grep luafilesystem || luarocks instal --local luafilesystem"]
+
+[[validation.setup]]
+name = "install inspect"
+command = "sh"
+args = ["-c", "luarocks list --local | grep inspect || luarocks instal --local inspect"]
+
+[[validation.setup]]
+name = "install luacheck"
+command = "sh"
+args = ["-c", "luarocks list --local | grep luacheck || luarocks instal --local luacheck"]
+
+[[validation.setup]]
+name = "install luacheck"
+command = "sh"
+args = ["-c", "stylua -V || cargo install stylua"]
 
 # Validation process steps.
 [[validation.steps]]
 name = "checks and tests"
 command = "just"
 args = ["ci"]
-
-# Validation teardown hooks.
-# [[validation.teardown]]
