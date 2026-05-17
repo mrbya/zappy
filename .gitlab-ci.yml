@@ -45,12 +45,14 @@ test:
 validate:
   stage: validate
   rules:
-    - changes:
-      - crates/zappy-templates/templates/*
-      - crates/zappy-templates/templates/**/*
-      - crates/zappy-templates/src/**/*
-      - crates/zappy-templates/build.rs
-      - crates/zappy-templates/Cargo.toml
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - crates/zappy-templates/templates/*
+        - crates/zappy-templates/templates/**/*
+        - crates/zappy-templates/src/**/*
+        - crates/zappy-templates/build.rs
+        - crates/zappy-templates/Cargo.toml
+        - justfile
   script:
     - echo "Validating templates..."
     - just test-templates

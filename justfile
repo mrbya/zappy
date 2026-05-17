@@ -116,7 +116,7 @@ ci:
 install-hooks:
     pre-commit install
 
-# Builds and installs dkb-lsp binary.
+# Builds and installs zappy binary.
 install:
     cargo install --path .
 

@@ -87,9 +87,9 @@ command = "sh"
 args = ["-c", "just -V || cargo install just"]
 
 [[validation.setup]]
-name = "install nextest"
-command = "rustup"
-args = ["install", "nightly"]
+name = "install nightly"
+command = "sh"
+args = ["-c", "rustup toolchain list | grep nightly || rustup install nightly"]
 
 [[validation.setup]]
 name = "install nextest"
