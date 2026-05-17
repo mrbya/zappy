@@ -71,7 +71,7 @@ args = ["-c", "just -V || cargo install just"]
 [[validation.setup]]
 name = "install luacheck"
 command = "sh"
-args = ["-c", "luarocks list | grep luacheck || luarocks instal --local luacheck"]
+args = ["-c", "luacheck -v || luarocks instal --local luacheck"]
 
 [[validation.setup]]
 name = "install luacheck"

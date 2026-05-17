@@ -85,12 +85,12 @@ args = ["-c", "luarocks list | grep argparse || luarocks instal --local argparse
 [[validation.setup]]
 name = "install busted"
 command = "sh"
-args = ["-c", "luarocks list | grep busted || luarocks instal --local busted"]
+args = ["-c", "busted --version || luarocks instal --local busted"]
 
 [[validation.setup]]
 name = "install luacov"
 command = "sh"
-args = ["-c", "luarocks list | grep luacov || luarocks instal --local luacov"]
+args = ["-c", "luacov --help || luarocks instal --local luacov"]
 
 [[validation.setup]]
 name = "install luassert"
@@ -110,7 +110,7 @@ args = ["-c", "luarocks list | grep inspect || luarocks instal --local inspect"]
 [[validation.setup]]
 name = "install luacheck"
 command = "sh"
-args = ["-c", "luarocks list | grep luacheck || luarocks instal --local luacheck"]
+args = ["-c", "luacheck -v || luarocks instal --local luacheck"]
 
 [[validation.setup]]
 name = "install luacheck"
