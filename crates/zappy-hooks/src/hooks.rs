@@ -70,19 +70,23 @@ pub struct HookExecutionSummary {
 /// # Errors
 /// Returns [`HooksError`] if hook execution fails.
 pub fn execute_hooks(input: &ExecuteHooksInput<'_>) -> HooksResult<HookExecutionSummary> {
+    tracing::debug!(phase = ?input.phase, hook_count = input.hooks.len(), output_dir = %input.output_dir.display(), "executing hook phase");
     let mut summary = HookExecutionSummary::default();
 
     for hook in input.hooks {
         if !should_run_hook(hook, input.variables) {
+            tracing::trace!(phase = ?input.phase, hook = hook_name(hook), "skipping hook because condition evaluated to false");
             summary.skipped = summary.skipped.checked_add(1).unwrap_or(summary.skipped);
             continue;
         }
 
         match execute_hook(hook, input.output_dir, input.variables) {
             Ok(()) => {
+                tracing::trace!(phase = ?input.phase, hook = hook_name(hook), "hook executed successfully");
                 summary.executed = summary.executed.checked_add(1).unwrap_or(summary.executed);
             }
             Err(error) if hook.optional => {
+                tracing::warn!(phase = ?input.phase, hook = hook_name(hook), "optional hook failed");
                 summary.optional_failed = summary
                     .optional_failed
                     .checked_add(1)
@@ -94,14 +98,28 @@ pub fn execute_hooks(input: &ExecuteHooksInput<'_>) -> HooksResult<HookExecution
         }
     }
 
+    tracing::debug!(
+        phase = ?input.phase,
+        executed = summary.executed,
+        skipped = summary.skipped,
+        optional_failed = summary.optional_failed,
+        warning_count = summary.warnings.len(),
+        "hook phase completed"
+    );
+
     Ok(summary)
 }
 
 /// Returns true if a hook should run.
 fn should_run_hook(hook: &HookSpec, variables: &ResolvedVariables) -> bool {
-    hook.when
+    let should_run = hook
+        .when
         .as_deref()
-        .is_none_or(|name| evaluate_condition(name, &variables.values))
+        .is_none_or(|name| evaluate_condition(name, &variables.values));
+
+    tracing::trace!(hook = hook_name(hook), condition = ?hook.when, should_run, "evaluated hook run condition");
+
+    should_run
 }
 
 /// Executes a hook.
@@ -111,6 +129,15 @@ fn execute_hook(
     variables: &ResolvedVariables,
 ) -> HooksResult<()> {
     let name = hook_name(hook);
+
+    tracing::trace!(
+        hook = name,
+        optional = hook.optional,
+        shell = hook.shell,
+        arg_count = hook.args.len(),
+        env_count = hook.env.len(),
+        "preparing hook execution"
+    );
 
     if hook.shell {
         return Err(Box::new(HooksError::ShellUnsupported { name }));
@@ -124,6 +151,8 @@ fn execute_hook(
         .collect::<Vec<_>>();
 
     let working_dir = resolve_working_dir(hook, output_dir, variables)?;
+
+    tracing::trace!(hook = name, command, working_dir = %working_dir.display(), "resolved hook command inputs");
 
     let mut command_builder = Command::new(&command);
     command_builder.args(args);
@@ -143,8 +172,11 @@ fn execute_hook(
     })?;
 
     if output.status.success() {
+        tracing::trace!(hook = name, status = %output.status, "hook command finished successfully");
         return Ok(());
     }
+
+    tracing::warn!(hook = name, status = %output.status, "hook command returned non-zero status");
 
     Err(Box::new(HooksError::Failed {
         name,
@@ -164,6 +196,7 @@ fn resolve_working_dir(
     variables: &ResolvedVariables,
 ) -> HooksResult<PathBuf> {
     let Some(working_dir) = hook.working_dir.as_ref() else {
+        tracing::trace!(hook = hook_name(hook), output_dir = %output_dir.display(), "using output directory as hook working directory");
         return Ok(output_dir.to_path_buf());
     };
 
@@ -174,6 +207,12 @@ fn resolve_working_dir(
                 source,
             })
         })?;
+
+    tracing::trace!(
+        hook = hook_name(hook),
+        rendered_working_dir = rendered.as_str(),
+        "rendered hook working directory"
+    );
 
     Ok(output_dir.join(rendered))
 }

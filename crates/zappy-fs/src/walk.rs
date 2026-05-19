@@ -42,9 +42,11 @@ pub enum SourceEntryKind {
 /// - [`FsError::ReadDirectoryEntry`] if fails to read a dir entry,
 /// - [`FsError::FileType`] if fails to inspect a file type.
 pub fn walk_source_root(source_root: &Path) -> FsResult<Vec<SourceEntry>> {
+    tracing::debug!(root = %source_root.display(), "walking template source root");
     let mut entries = Vec::new();
     walk_dir(source_root, source_root, &mut entries)?;
     entries.sort_by(|left, right| left.relative_path.cmp(&right.relative_path));
+    tracing::debug!(root = %source_root.display(), entry_count = entries.len(), "completed source root walk");
     Ok(entries)
 }
 
@@ -64,6 +66,7 @@ pub fn walk_source_root(source_root: &Path) -> FsResult<Vec<SourceEntry>> {
 /// - [`FsError::ReadDirectoryEntry`] if fails to read a dir entry,
 /// - [`FsError::FileType`] if fails to inspect a file type.
 fn walk_dir(source_root: &Path, current: &Path, entries: &mut Vec<SourceEntry>) -> FsResult<()> {
+    tracing::trace!(current = %current.display(), "walking directory level");
     let mut children = Vec::new();
 
     let read_dir = fs::read_dir(current).map_err(|source| {
@@ -105,6 +108,8 @@ fn walk_dir(source_root: &Path, current: &Path, entries: &mut Vec<SourceEntry>) 
         } else {
             SourceEntryKind::File
         };
+
+        tracing::trace!(path = %path.display(), relative = %relative_path.display(), kind = ?kind, "discovered source entry");
 
         entries.push(SourceEntry {
             path: path.clone(),

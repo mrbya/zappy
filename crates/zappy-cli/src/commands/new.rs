@@ -11,6 +11,13 @@ pub fn new(args: &NewArgs) -> ExitCode {
     match zappy_core::parse_variable_overrides(args.vars.iter()) {
         Ok(overrides) => {
             tracing::info!(template = %args.template, %args.project_name, "starting project generation");
+            tracing::debug!(
+                override_count = overrides.len(),
+                no_hooks = args.no_hooks,
+                force = args.force,
+                dry_run = args.dry_run,
+                "parsed new command inputs"
+            );
 
             DiagnosticReport::info("Zappy `new` command")
                 .detail("Generating:")
@@ -33,6 +40,7 @@ pub fn new(args: &NewArgs) -> ExitCode {
             let resolved = match resolve_variables(&template.manifest.variables, &input) {
                 Ok(resolved) => resolved,
                 Err(error) => {
+                    tracing::warn!(template = %args.template, project = %args.project_name, %error, "variable resolution failed");
                     print_error_with_source("failed to resolve variables", error);
                     return ExitCode::FAILURE;
                 }
@@ -59,6 +67,7 @@ pub fn new(args: &NewArgs) -> ExitCode {
             let plan = match zappy_fs::build_generation_plan(&plan_input) {
                 Ok(plan) => plan,
                 Err(error) => {
+                    tracing::warn!(template = %args.template, output = %plan_input.output_dir.display(), %error, "failed to build generation plan");
                     print_error_with_source("failed to build generation plan", error);
                     return ExitCode::FAILURE;
                 }
@@ -85,6 +94,7 @@ pub fn new(args: &NewArgs) -> ExitCode {
             ExitCode::SUCCESS
         }
         Err(error) => {
+            tracing::warn!(template = %args.template, project = %args.project_name, %error, "failed to parse variable overrides");
             print_error_with_source("failed to parse variable overrides", error);
             ExitCode::FAILURE
         }

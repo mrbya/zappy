@@ -7,6 +7,8 @@ use crate::commands::helpers::create_template_skeleton;
 
 /// Create command stub.
 pub fn create(args: &CreateArgs) -> ExitCode {
+    tracing::info!(empty = args.empty, output = %args.output.display(), from = ?args.from, template = ?args.template, "handling create command");
+
     if args.empty {
         let input = InitTemplateInput {
             output_dir: args.output.clone(),
@@ -22,6 +24,8 @@ pub fn create(args: &CreateArgs) -> ExitCode {
 
         return ExitCode::SUCCESS;
     }
+
+    tracing::warn!(from = ?args.from, output = %args.output.display(), "non-empty create remains a stub");
 
     println!("zappy create: stub");
     println!("{args:#?}");

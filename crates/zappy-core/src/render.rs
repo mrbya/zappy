@@ -14,6 +14,11 @@ use crate::{CoreError, CoreResult};
 /// Rendered text.
 #[must_use]
 pub fn render_text(input: &str, replacements: &IndexMap<String, String>) -> String {
+    tracing::trace!(
+        input_len = input.len(),
+        replacement_count = replacements.len(),
+        "rendering text with placeholder replacements"
+    );
     let mut rendered = String::from(input);
 
     for (placeholder, value) in replacements {
@@ -38,6 +43,11 @@ pub fn render_relative_path(
     input: &str,
     replacements: &IndexMap<String, String>,
 ) -> CoreResult<String> {
+    tracing::trace!(
+        input,
+        replacement_count = replacements.len(),
+        "rendering relative path"
+    );
     let rendered = render_text(input, replacements);
     validate_rendered_relative_path(&rendered)?;
 
@@ -61,6 +71,7 @@ pub fn render_relative_path(
 /// - rendered path is absolute,
 /// - rendered path contains `..` path components.
 fn validate_rendered_relative_path(path: &str) -> CoreResult<()> {
+    tracing::trace!(path, "validating rendered relative path");
     if path.trim().is_empty() {
         return Err(CoreError::InvalidRenderedPath {
             path: String::from(path),

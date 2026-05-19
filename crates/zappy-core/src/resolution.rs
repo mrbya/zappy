@@ -69,6 +69,14 @@ pub fn resolve_variables(
     variables: &VariableMap,
     input: &VariableResolutionInput,
 ) -> CoreResult<ResolvedVariables> {
+    tracing::debug!(
+        declared_variables = variables.len(),
+        builtin_values = input.builtins.len(),
+        explicit_values = input.explicit.len(),
+        interactive_values = input.interactive.len(),
+        user_defaults = input.user_defaults.len(),
+        "resolving template variables"
+    );
     validate_builtin_variables(&input.builtins)?;
     validate_known_variables(variables, "explicit values", &input.explicit)?;
     validate_known_variables(variables, "interactive values", &input.interactive)?;
@@ -88,6 +96,13 @@ pub fn resolve_variables(
         &mut replacements,
     );
 
+    tracing::debug!(
+        resolved_values = resolved_values.len(),
+        transformations = transformed_values.len(),
+        replacements = replacements.len(),
+        "variable resolution completed"
+    );
+
     Ok(ResolvedVariables {
         values: resolved_values,
         transformations: transformed_values,
@@ -103,6 +118,12 @@ fn resolve_declared_values(
     let mut resolved_values = VariableValueMap::new();
 
     for (name, spec) in variables {
+        tracing::trace!(
+            variable = name,
+            required = spec.required,
+            has_default = spec.default.is_some(),
+            "resolving declared variable"
+        );
         let value = resolve_single_variable(name, spec, input)?;
 
         let Some(value) = value else {
@@ -159,26 +180,55 @@ fn resolve_single_variable(
     input: &VariableResolutionInput,
 ) -> CoreResult<Option<VariableValue>> {
     if let Some(value) = input.builtins.get(name) {
+        tracing::trace!(
+            variable = name,
+            source = "builtins",
+            "resolved variable from input source"
+        );
         return Ok(Some(value.clone()));
     }
 
     if let Some(value) = input.explicit.get(name) {
+        tracing::trace!(
+            variable = name,
+            source = "explicit",
+            "resolved variable from input source"
+        );
         return Ok(Some(value.clone()));
     }
 
     if let Some(value) = input.interactive.get(name) {
+        tracing::trace!(
+            variable = name,
+            source = "interactive",
+            "resolved variable from input source"
+        );
         return Ok(Some(value.clone()));
     }
 
     if let Some(value) = spec.default.as_ref() {
+        tracing::trace!(
+            variable = name,
+            source = "template_default",
+            "resolved variable from input source"
+        );
         return Ok(Some(value.clone()));
     }
 
     if let Some(value) = input.user_defaults.get(name) {
+        tracing::trace!(
+            variable = name,
+            source = "user_default",
+            "resolved variable from input source"
+        );
         return Ok(Some(value.clone()));
     }
 
     if spec.required {
+        tracing::debug!(
+            variable = name,
+            "required variable is missing after source resolution"
+        );
         return Err(CoreError::MissingRequiredVariable {
             name: String::from(name),
         });
@@ -197,6 +247,12 @@ fn validate_required_when(variables: &VariableMap, values: &VariableValueMap) ->
         if !evaluate_condition(condition, values) {
             continue;
         }
+
+        tracing::trace!(
+            variable = name,
+            condition,
+            "required_when condition evaluated to true"
+        );
 
         if !is_present(values.get(name)) {
             return Err(CoreError::ConditionallyRequiredVariable {
@@ -223,6 +279,12 @@ fn validate_conflicts(variables: &VariableMap, values: &VariableValueMap) -> Cor
         if !is_enabled(values.get(name)) {
             continue;
         }
+
+        tracing::trace!(
+            variable = name,
+            conflict_count = spec.conflicts_with.len(),
+            "checking enabled variable conflicts"
+        );
 
         for conflict in &spec.conflicts_with {
             if is_enabled(values.get(conflict)) {
@@ -260,6 +322,10 @@ fn inject_builtins(
     transformations: &mut IndexMap<String, IndexMap<TransformKind, String>>,
     replacements: &mut IndexMap<String, String>,
 ) {
+    tracing::trace!(
+        builtin_count = builtins.len(),
+        "injecting built-in render data"
+    );
     let builtin_transformations = crate::builtins::builtin_transformations(builtins);
     let builtin_replacements = crate::builtins::builtin_replacements(builtins);
 

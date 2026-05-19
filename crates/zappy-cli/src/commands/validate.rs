@@ -13,11 +13,14 @@ use crate::diagnostics::{print_error, print_error_with_source, print_info};
 
 /// Validate command stub.
 pub fn validate(args: &ValidateArgs) -> ExitCode {
+    tracing::info!(template = %args.template, explicit_templates_dir = ?args.templates_dir, keep_temp = args.keep_temp, no_hooks = args.no_hooks, "validating template");
+
     let Some(template) = resolve_template(args.templates_dir.clone(), &args.template) else {
         return ExitCode::FAILURE;
     };
 
     let Some(validation) = template.manifest.validation.as_ref() else {
+        tracing::warn!(template = %args.template, "validation requested for template without validation config");
         print_error(format!(
             "template `{}` does not define validation config",
             args.template
@@ -28,12 +31,14 @@ pub fn validate(args: &ValidateArgs) -> ExitCode {
     let temp_dir = match TempDir::new() {
         Ok(temp_dir) => temp_dir,
         Err(error) => {
+            tracing::warn!(template = %args.template, %error, "failed to create validation temp dir");
             print_error_with_source("failed to create validation temp dir", error);
             return ExitCode::FAILURE;
         }
     };
 
     let output_dir = validation_output_dir(temp_dir.path(), validation);
+    tracing::debug!(output = %output_dir.display(), "prepared validation output directory");
 
     let project_name = generate_project_name(&output_dir);
     let builtins = command_builtins(project_name);
@@ -47,6 +52,7 @@ pub fn validate(args: &ValidateArgs) -> ExitCode {
     let resolved = match resolve_variables(&template.manifest.variables, &input) {
         Ok(resolved) => resolved,
         Err(error) => {
+            tracing::warn!(template = %args.template, %error, "failed to resolve validation variables");
             print_error_with_source("failed to resolve variables", error);
             return ExitCode::FAILURE;
         }
@@ -63,6 +69,7 @@ pub fn validate(args: &ValidateArgs) -> ExitCode {
     let plan = match build_generation_plan(&plan_input) {
         Ok(plan) => plan,
         Err(error) => {
+            tracing::warn!(template = %args.template, output = %output_dir.display(), %error, "failed to build validation generation plan");
             print_error_with_source("failed to build generation plan", error);
             return ExitCode::FAILURE;
         }
@@ -81,6 +88,7 @@ pub fn validate(args: &ValidateArgs) -> ExitCode {
     );
 
     let steps_result = if setup_result.is_err() {
+        tracing::debug!(template = %args.template, "skipping validation steps because setup failed");
         true
     } else {
         run_hooks(
@@ -103,12 +111,14 @@ pub fn validate(args: &ValidateArgs) -> ExitCode {
         )
         .is_err()
     {
+        tracing::warn!(template = %args.template, "validation hooks reported failure");
         return ExitCode::FAILURE;
     }
 
     if args.keep_temp {
         let temp_path = temp_dir.keep();
         if !temp_path.exists() {
+            tracing::warn!(path = %temp_path.display(), "validation temp dir was not preserved after keep request");
             print_error(format!(
                 "failed to keep validation temp dir @ `{}`",
                 temp_path.display()
@@ -116,12 +126,14 @@ pub fn validate(args: &ValidateArgs) -> ExitCode {
             return ExitCode::SUCCESS;
         }
 
+        tracing::info!(path = %temp_path.display(), "validation temp dir kept");
         print_info(format!(
             "validation temp tir kept @ {}",
             temp_path.display()
         ));
     }
 
+    tracing::info!(template = %args.template, "template validation completed successfully");
     print_info(format!(
         "template `{}` validated successfully",
         args.template

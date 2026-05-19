@@ -104,6 +104,7 @@ impl Manifest {
     /// - [`CoreError::InvalidManifest`] if validation fails.
     pub fn load_from_path(path: impl AsRef<Path>) -> CoreResult<Self> {
         let path = path.as_ref();
+        tracing::debug!(path = %path.display(), "loading template manifest from path");
         let contents = fs::read_to_string(path).map_err(|source| CoreError::ReadManifest {
             path: path.to_path_buf(),
             source,
@@ -127,6 +128,7 @@ impl Manifest {
     /// - [`CoreError::InvalidManifest`] if validation fails.
     pub fn from_toml_str(contents: &str, path: impl AsRef<Path>) -> CoreResult<Self> {
         let path = path.as_ref();
+        tracing::debug!(path = %path.display(), bytes = contents.len(), "parsing template manifest contents");
 
         let raw =
             toml::from_str::<RawManifest>(contents).map_err(|source| CoreError::ParseManifest {
@@ -142,6 +144,7 @@ impl TryFrom<RawManifest> for Manifest {
     type Error = CoreError;
 
     fn try_from(raw: RawManifest) -> CoreResult<Self> {
+        tracing::debug!("validating parsed manifest sections");
         let template = TemplateMetadata::try_from(raw.template)?;
         let variables = RawVariableSpec::validate_map(raw.variables)?;
         let paths = PathConfig::try_from(raw.paths)?;
@@ -159,6 +162,16 @@ impl TryFrom<RawManifest> for Manifest {
         if let Some(validation) = validation.as_ref() {
             validate_validation_variables(&variables, validation)?;
         }
+
+        tracing::debug!(
+            template = template.id.as_str(),
+            variable_count = variables.len(),
+            conditional_count = conditionals.len(),
+            pre_generate_hooks = hooks.pre_generate.len(),
+            post_generate_hooks = hooks.post_generate.len(),
+            has_validation = validation.is_some(),
+            "manifest validation completed"
+        );
 
         Ok(Self {
             template,
@@ -229,6 +242,10 @@ fn validate_validation_variables(
     variables: &VariableMap,
     validation: &ValidationConfig,
 ) -> CoreResult<()> {
+    tracing::trace!(
+        validation_variable_count = validation.variables.len(),
+        "validating validation variable references"
+    );
     for name in validation.variables.keys() {
         if !variables.contains_key(name) {
             return Err(CoreError::invalid_manifest(format!(

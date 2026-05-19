@@ -7,6 +7,13 @@ use crate::commands::helpers::create_template_skeleton;
 
 /// Init command stub.
 pub fn init_template(args: &InitArgs) -> ExitCode {
+    tracing::info!(
+        output = %args.output.display(),
+        template = ?args.template,
+        force = args.force,
+        "initializing template command"
+    );
+
     let input = InitTemplateInput {
         output_dir: args.output.clone(),
         template_id: args.template.clone(),

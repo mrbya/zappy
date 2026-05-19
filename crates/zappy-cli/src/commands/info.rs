@@ -7,10 +7,13 @@ use crate::commands::helpers::resolve_template;
 
 /// Info command stub.
 pub fn info(args: &InfoArgs) -> ExitCode {
+    tracing::info!(template = %args.template, explicit_templates_dir = ?args.templates_dir, "showing template info");
+
     let Some(template) = resolve_template(args.templates_dir.clone(), &args.template) else {
         return ExitCode::FAILURE;
     };
 
+    tracing::debug!(path = %template.template_dir.display(), "printing template metadata");
     print_template_info(&template);
 
     ExitCode::SUCCESS

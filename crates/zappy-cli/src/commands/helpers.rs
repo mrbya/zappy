@@ -32,6 +32,7 @@ pub fn discovery_config(templates_dir: Option<PathBuf>) -> DiscoveryConfig {
                 Some(path)
             }
             Err(error) => {
+                tracing::warn!(explicit_templates_dir = ?templates_dir, %error, "bundled templates are unavailable");
                 print_warning_with_source("failed to prepare bundled templates", error);
                 None
             }
@@ -62,6 +63,12 @@ pub(super) fn resolve_template(
     );
 
     let Some(template) = catalogue.find_by_id(id) else {
+        tracing::warn!(
+            template = id,
+            discovered = catalogue.templates().len(),
+            search_paths = catalogue.search_paths().len(),
+            "requested template was not found"
+        );
         print_template_not_found(id, catalogue.search_paths(), catalogue.templates());
         return None;
     };
@@ -84,6 +91,7 @@ pub(super) fn build_templates_catalogue(
     match discover_templates(&config) {
         Ok(catalogue) => Some(catalogue),
         Err(error) => {
+            tracing::warn!(%error, "template discovery failed");
             print_error_with_source("failed to discover templates", error);
             None
         }
@@ -108,8 +116,13 @@ pub(super) fn run_generation(
     );
 
     if let Err(error) = create_directory(&plan.output_dir) {
+        tracing::warn!(output = %plan.output_dir.display(), %error, "failed to create project output directory");
         print_error_with_source("failed to create project dir", error);
         return Err(());
+    }
+
+    if no_hooks {
+        tracing::debug!("generation hooks disabled");
     }
 
     if !no_hooks
@@ -130,6 +143,7 @@ pub(super) fn run_generation(
     let summary = match materialize_generation_plan(plan, options) {
         Ok(summary) => summary,
         Err(error) => {
+            tracing::warn!(output = %plan.output_dir.display(), %error, "generation plan materialization failed");
             print_error_with_source("failed to generate project", error);
             return Err(());
         }
@@ -180,8 +194,11 @@ pub(super) fn run_generation(
 /// # Returns
 /// `Ok(())` on success `Err(())` otherwise.
 pub(super) fn create_template_skeleton(input: &InitTemplateInput) -> Result<(), ()> {
+    tracing::info!(output = %input.output_dir.display(), force = input.force, "initializing template skeleton");
+
     match init_template_skeleton(input) {
         Ok(()) => {
+            tracing::debug!(output = %input.output_dir.display(), "template skeleton initialized");
             print_info(format!(
                 "Initialized template skeleton at {}",
                 input.output_dir.display()
@@ -189,6 +206,7 @@ pub(super) fn create_template_skeleton(input: &InitTemplateInput) -> Result<(), 
             Ok(())
         }
         Err(error) => {
+            tracing::warn!(output = %input.output_dir.display(), %error, "template skeleton initialization failed");
             print_error_with_source("failed to create template skeleton", error);
             Err(())
         }
@@ -233,6 +251,7 @@ impl DateParts {
 
 /// Constructs command built-in variables.
 pub fn command_builtins(project_name: String) -> VariableValueMap {
+    tracing::trace!(%project_name, "building CLI built-in variables");
     let mut builtins = VariableValueMap::new();
 
     let date = DateParts::new();
@@ -255,9 +274,18 @@ pub fn command_builtins(project_name: String) -> VariableValueMap {
 
 /// Retrieves host username.
 fn user_name() -> String {
-    git_user_name()
-        .or_else(env_user)
-        .unwrap_or_else(|| String::from("{TODO: add username}"))
+    if let Some(user) = git_user_name() {
+        tracing::trace!("using git-configured user name");
+        return user;
+    }
+
+    if let Some(user) = env_user() {
+        tracing::trace!("using environment user name");
+        return user;
+    }
+
+    tracing::debug!("falling back to placeholder user name");
+    String::from("{TODO: add username}")
 }
 
 /// Retrieves git username.
@@ -290,7 +318,13 @@ fn env_user() -> Option<String> {
 
 /// Retrieves user email.
 fn user_email() -> String {
-    git_user_email().unwrap_or_else(|| String::from("{TODO: add user email}"))
+    if let Some(email) = git_user_email() {
+        tracing::trace!("using git-configured user email");
+        return email;
+    }
+
+    tracing::debug!("falling back to placeholder user email");
+    String::from("{TODO: add user email}")
 }
 
 /// Retrieves user git email.
@@ -340,6 +374,7 @@ pub(super) fn run_hooks(
     let summary = match execute_hooks(&input) {
         Ok(summary) => summary,
         Err(error) => {
+            tracing::warn!(phase = phase_name, %error, "hook execution failed");
             print_error_with_source("hook execution failed", error);
             return Err(());
         }
@@ -352,8 +387,18 @@ pub(super) fn run_hooks(
 /// Prints hooks execution summary.
 pub(super) fn print_hook_summary(phase: &str, summary: &zappy_hooks::HookExecutionSummary) {
     if summary.executed == 0 && summary.skipped == 0 && summary.optional_failed == 0 {
+        tracing::trace!(phase, "hook summary empty");
         return;
     }
+
+    tracing::debug!(
+        phase,
+        executed = summary.executed,
+        skipped = summary.skipped,
+        optional_failed = summary.optional_failed,
+        warning_count = summary.warnings.len(),
+        "hook phase completed"
+    );
 
     print_info_with_details(
         format!("hooks ({phase}) done"),
@@ -364,6 +409,7 @@ pub(super) fn print_hook_summary(phase: &str, summary: &zappy_hooks::HookExecuti
     );
 
     for warning in &summary.warnings {
+        tracing::warn!(phase, warning, "optional hook reported warning");
         print_warning(warning);
     }
 }

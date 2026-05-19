@@ -23,10 +23,14 @@ pub const CACHE_MARKER: &str = ".zappy-templates-cache";
 pub fn ensure_bundled_templates_available() -> TemplatesResult<PathBuf> {
     let templates_dir = resolve_cache_dir()?;
 
+    tracing::debug!(path = %templates_dir.display(), "ensuring bundled templates are available");
+
     if cache_is_ready(&templates_dir) {
+        tracing::debug!(path = %templates_dir.display(), "bundled template cache already ready");
         return Ok(templates_dir);
     }
 
+    tracing::info!(path = %templates_dir.display(), "installing bundled templates into cache");
     install_bundled_templates(&templates_dir)?;
 
     Ok(templates_dir)
@@ -39,6 +43,8 @@ pub fn ensure_bundled_templates_available() -> TemplatesResult<PathBuf> {
 pub fn clear_cache_dir() -> TemplatesResult<()> {
     let templates_dir = resolve_cache_dir()?;
 
+    tracing::info!(path = %templates_dir.display(), "clearing bundled template cache directory");
+
     if templates_dir.exists() {
         fs::remove_dir_all(&templates_dir).map_err(|source| {
             Box::new(TemplatesError::ClearCache {
@@ -46,6 +52,8 @@ pub fn clear_cache_dir() -> TemplatesResult<()> {
                 source,
             })
         })?;
+    } else {
+        tracing::debug!(path = %templates_dir.display(), "bundled template cache directory already absent");
     }
 
     Ok(())
@@ -53,6 +61,7 @@ pub fn clear_cache_dir() -> TemplatesResult<()> {
 
 /// Installs bundled templates into template cache.
 fn install_bundled_templates(templates_dir: &Path) -> TemplatesResult<()> {
+    tracing::debug!(path = %templates_dir.display(), "creating bundled template cache directories");
     fs::create_dir_all(templates_dir).map_err(|source| {
         Box::new(TemplatesError::CreateDirectory {
             path: templates_dir.to_path_buf(),
@@ -61,6 +70,8 @@ fn install_bundled_templates(templates_dir: &Path) -> TemplatesResult<()> {
     })?;
 
     extract_dir(&BUNDLED_TEMPLATES, templates_dir)?;
+
+    tracing::trace!(path = %templates_dir.display(), "writing bundled template cache marker");
 
     fs::write(templates_dir.join(CACHE_MARKER), expected_marker()).map_err(|source| {
         Box::new(TemplatesError::WriteFile {
@@ -77,10 +88,14 @@ fn cache_is_ready(templates_dir: &Path) -> bool {
     let marker_path = templates_dir.join(CACHE_MARKER);
 
     let Ok(marker) = fs::read_to_string(marker_path) else {
+        tracing::trace!(path = %templates_dir.display(), "bundled template cache marker is missing or unreadable");
         return false;
     };
 
-    marker == expected_marker()
+    let is_ready = marker == expected_marker();
+    tracing::trace!(path = %templates_dir.display(), cache_ready = is_ready, "checked bundled template cache marker");
+
+    is_ready
 }
 
 /// Generates expected cache marker contents.
@@ -101,11 +116,15 @@ fn resolve_cache_dir() -> TemplatesResult<PathBuf> {
         return Err(Box::new(TemplatesError::ResolveCacheDirectory));
     };
 
-    Ok(project_dirs
+    let cache_dir = project_dirs
         .cache_dir()
         .join("bundled-templates")
         .join(env!("CARGO_PKG_VERSION"))
-        .join("templates"))
+        .join("templates");
+
+    tracing::trace!(path = %cache_dir.display(), "resolved bundled template cache directory");
+
+    Ok(cache_dir)
 }
 
 /// Recursively extracts en embedded directory.
@@ -114,6 +133,8 @@ fn extract_dir(dir: &Dir<'_>, destination_root: &Path) -> TemplatesResult<()> {
         match *entry {
             DirEntry::Dir(ref child_dir) => {
                 let destination = destination_root.join(child_dir.path());
+
+                tracing::trace!(path = %destination.display(), "extracting bundled template directory");
 
                 fs::create_dir_all(&destination).map_err(|source| {
                     Box::new(TemplatesError::CreateDirectory {
@@ -127,6 +148,8 @@ fn extract_dir(dir: &Dir<'_>, destination_root: &Path) -> TemplatesResult<()> {
 
             DirEntry::File(ref file) => {
                 let destination = destination_root.join(file.path());
+
+                tracing::trace!(path = %destination.display(), bytes = file.contents().len(), "extracting bundled template file");
 
                 if let Some(parent) = destination.parent() {
                     fs::create_dir_all(parent).map_err(|source| {

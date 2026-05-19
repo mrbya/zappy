@@ -8,6 +8,8 @@ use crate::diagnostics::print_warning;
 
 /// List command stub.
 pub fn list(args: &ListArgs) -> ExitCode {
+    tracing::info!(language = ?args.language, explicit_templates_dir = ?args.templates_dir, "listing templates");
+
     let Some(catalogue) = build_templates_catalogue(args.templates_dir.clone()) else {
         return ExitCode::FAILURE;
     };
@@ -18,7 +20,15 @@ pub fn list(args: &ListArgs) -> ExitCode {
         .filter(|template| match_language_filter(template, args.language.as_deref()))
         .collect::<Vec<_>>();
 
+    tracing::debug!(
+        discovered = catalogue.templates().len(),
+        matching = templates.len(),
+        shadowed = catalogue.shadowed().len(),
+        "template list prepared"
+    );
+
     if templates.is_empty() {
+        tracing::warn!(language = ?args.language, "no templates matched the list request");
         print_warning("no templates found");
         return ExitCode::SUCCESS;
     }

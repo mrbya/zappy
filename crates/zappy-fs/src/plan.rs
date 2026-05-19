@@ -47,13 +47,22 @@ pub fn build_generation_plan(input: &BuildPlanInput<'_>) -> FsResult<GenerationP
     let source_root = input
         .template_dir
         .join(&input.manifest.template.source.root);
+    tracing::info!(
+        template = input.manifest.template.id.as_str(),
+        source_root = %source_root.display(),
+        output = %input.output_dir.display(),
+        force = input.force,
+        "building generation plan"
+    );
     let entries = walk_source_root(&source_root)?;
 
     let mut operations = Vec::new();
     let mut warnings = Vec::new();
 
     for entry in entries {
+        tracing::trace!(path = %entry.path.display(), relative = %entry.relative_path.display(), kind = ?entry.kind, "planning source entry");
         if is_excluded(&entry.relative_path, &input.manifest.paths.exclude) {
+            tracing::trace!(relative = %entry.relative_path.display(), "skipping excluded path");
             operations.push(PlanOperation::Skip {
                 source: entry.path,
                 reason: SkipReason::Excluded,
@@ -64,6 +73,7 @@ pub fn build_generation_plan(input: &BuildPlanInput<'_>) -> FsResult<GenerationP
         if let Some(variable) =
             false_conditional_for_path(&entry.relative_path, input.manifest, input.variables)
         {
+            tracing::trace!(relative = %entry.relative_path.display(), condition = variable, "skipping conditional path");
             operations.push(PlanOperation::Skip {
                 source: entry.path,
                 reason: SkipReason::ConditionalFalse { variable },
@@ -72,6 +82,7 @@ pub fn build_generation_plan(input: &BuildPlanInput<'_>) -> FsResult<GenerationP
         }
 
         if entry.kind == SourceEntryKind::Symlink {
+            tracing::trace!(relative = %entry.relative_path.display(), "skipping symlink path");
             operations.push(PlanOperation::Skip {
                 source: entry.path,
                 reason: SkipReason::Symlink,
@@ -97,6 +108,7 @@ pub fn build_generation_plan(input: &BuildPlanInput<'_>) -> FsResult<GenerationP
 
             SourceEntryKind::File => {
                 if destination.exists() && !input.force {
+                    tracing::debug!(destination = %destination.display(), "detected destination conflict while planning");
                     warnings.push(PlanWarning::DestinationExists {
                         destination: destination.clone(),
                     });
@@ -130,6 +142,13 @@ pub fn build_generation_plan(input: &BuildPlanInput<'_>) -> FsResult<GenerationP
         }
     }
 
+    tracing::debug!(
+        template = input.manifest.template.id.as_str(),
+        operations = operations.len(),
+        warnings = warnings.len(),
+        "generation plan built"
+    );
+
     Ok(GenerationPlan {
         template_id: input.manifest.template.id.clone(),
         output_dir: input.output_dir.clone(),
@@ -148,6 +167,7 @@ fn plan_text_or_binary_file(
 ) -> FsResult<()> {
     match fs::read_to_string(source) {
         Ok(content) => {
+            tracing::trace!(source = %source.display(), destination = %destination.display(), "planning rendered text file");
             let content = render_text(&content, &input.variables.replacements);
 
             operations.push(PlanOperation::RenderTextFile {
@@ -160,6 +180,7 @@ fn plan_text_or_binary_file(
         }
 
         Err(error) if error.kind() == std::io::ErrorKind::InvalidData => {
+            tracing::debug!(source = %source.display(), destination = %destination.display(), "non-utf8 file will be copied as binary");
             warnings.push(PlanWarning::NonUtf8FileCopiedAsBinary {
                 source: source.to_path_buf(),
             });
