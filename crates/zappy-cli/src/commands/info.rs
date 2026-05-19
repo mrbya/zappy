@@ -1,28 +1,17 @@
 use std::process::ExitCode;
 
-use zappy_fs::{DiscoveredTemplate, discover_templates};
+use zappy_fs::DiscoveredTemplate;
 
 use crate::cli::InfoArgs;
-use crate::commands::helpers::discovery_config;
+use crate::commands::helpers::resolve_template;
 
 /// Info command stub.
 pub fn info(args: &InfoArgs) -> ExitCode {
-    let config = discovery_config(args.templates_dir.clone());
-
-    let catalogue = match discover_templates(&config) {
-        Ok(catalogue) => catalogue,
-        Err(error) => {
-            eprintln!("Error: {error}");
-            return ExitCode::FAILURE;
-        }
-    };
-
-    let Some(template) = catalogue.find_by_id(&args.template) else {
-        eprintln!("Error: template `{}` was not found", args.template);
+    let Some(template) = resolve_template(args.templates_dir.clone(), &args.template) else {
         return ExitCode::FAILURE;
     };
 
-    print_template_info(template);
+    print_template_info(&template);
 
     ExitCode::SUCCESS
 }

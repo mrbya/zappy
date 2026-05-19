@@ -6,10 +6,16 @@ use zappy_core::hooks::HookSpec;
 use zappy_core::{GenerationPlan, ResolvedVariables, VariableValue, VariableValueMap};
 use zappy_fs::{
     DiscoveredTemplate, DiscoveryConfig, InitTemplateInput, MaterializationOptions,
-    create_directory, discover_templates, init_template_skeleton, materialize_generation_plan,
+    TemplateCatalogue, create_directory, discover_templates, init_template_skeleton,
+    materialize_generation_plan,
 };
 use zappy_hooks::{ExecuteHooksInput, HookPhase, execute_hooks};
 use zappy_templates::ensure_bundled_templates_available;
+
+use crate::diagnostics::{
+    print_error_with_source, print_info, print_info_with_details, print_template_not_found,
+    print_warning, print_warning_with_source,
+};
 
 /// Constructs discovery config.
 pub fn discovery_config(templates_dir: Option<PathBuf>) -> DiscoveryConfig {
@@ -19,7 +25,7 @@ pub fn discovery_config(templates_dir: Option<PathBuf>) -> DiscoveryConfig {
         match ensure_bundled_templates_available() {
             Ok(path) => Some(path),
             Err(error) => {
-                eprint!("warning: failed to prepare bundled templates: {error}");
+                print_warning_with_source("failed to prepare bundled templates", error);
                 None
             }
         }
@@ -39,22 +45,29 @@ pub(super) fn resolve_template(
     templates_dir: Option<PathBuf>,
     id: &str,
 ) -> Option<DiscoveredTemplate> {
-    let config = discovery_config(templates_dir);
-
-    let catalogue = match discover_templates(&config) {
-        Ok(catalogue) => catalogue,
-        Err(error) => {
-            eprintln!("Error: {error}");
-            return None;
-        }
-    };
+    let catalogue = build_templates_catalogue(templates_dir)?;
 
     let Some(template) = catalogue.find_by_id(id) else {
-        eprintln!("Error: template `{id}` was not found");
+        print_template_not_found(id, catalogue.search_paths(), catalogue.templates());
         return None;
     };
 
     Some(template.clone())
+}
+
+/// Builds template catalogue.
+pub(super) fn build_templates_catalogue(
+    templates_dir: Option<PathBuf>,
+) -> Option<TemplateCatalogue> {
+    let config = discovery_config(templates_dir);
+
+    match discover_templates(&config) {
+        Ok(catalogue) => Some(catalogue),
+        Err(error) => {
+            print_error_with_source("failed to discover templates", error);
+            None
+        }
+    }
 }
 
 /// Runs filesystem an hook execution paths for zappy commands.
@@ -69,7 +82,7 @@ pub(super) fn run_generation(
     plan: &GenerationPlan,
 ) -> Result<(), ()> {
     if let Err(error) = create_directory(&plan.output_dir) {
-        eprintln!("Error: {error}");
+        print_error_with_source("failed to create project dir", error);
         return Err(());
     }
 
@@ -91,7 +104,7 @@ pub(super) fn run_generation(
     let summary = match materialize_generation_plan(plan, options) {
         Ok(summary) => summary,
         Err(error) => {
-            eprintln!("Error: {error}");
+            print_error_with_source("failed to generate project", error);
             return Err(());
         }
     };
@@ -109,17 +122,20 @@ pub(super) fn run_generation(
         return Err(());
     }
 
-    println!(
-        "Generated `{}` in {}",
-        &template.manifest.template.id.as_str(),
-        plan.output_dir.display()
-    );
-    println!(
-        "Created {} directories, wrote {} text files, copied {} binary files, skipped {} paths.",
-        summary.directories_created,
-        summary.text_files_written,
-        summary.binary_files_copied,
-        summary.skipped,
+    print_info_with_details(
+        format!(
+            "Generated `{}` in {}",
+            &template.manifest.template.id.as_str(),
+            plan.output_dir.display()
+        ),
+        format!(
+            "Created {} directories, wrote {} text files, copied {} binary files, skipped {} \
+             paths.",
+            summary.directories_created,
+            summary.text_files_written,
+            summary.binary_files_copied,
+            summary.skipped,
+        ),
     );
 
     Ok(())
@@ -132,14 +148,14 @@ pub(super) fn run_generation(
 pub(super) fn create_template_skeleton(input: &InitTemplateInput) -> Result<(), ()> {
     match init_template_skeleton(input) {
         Ok(()) => {
-            println!(
+            print_info(format!(
                 "Initialized template skeleton at {}",
                 input.output_dir.display()
-            );
+            ));
             Ok(())
         }
         Err(error) => {
-            eprintln!("Error: {error}");
+            print_error_with_source("failed to create template skeleton", error);
             Err(())
         }
     }
@@ -284,7 +300,7 @@ pub(super) fn run_hooks(
     let summary = match execute_hooks(&input) {
         Ok(summary) => summary,
         Err(error) => {
-            eprintln!("Error: {error}");
+            print_error_with_source("hook execution failed", error);
             return Err(());
         }
     };
@@ -299,12 +315,15 @@ pub(super) fn print_hook_summary(phase: &str, summary: &zappy_hooks::HookExecuti
         return;
     }
 
-    println!(
-        "Hooks ({phase}): executed {}, skipped {}, optional failures {}.",
-        summary.executed, summary.skipped, summary.optional_failed,
+    print_info_with_details(
+        format!("hooks ({phase}) done"),
+        format!(
+            "executed {}, skipped {}, optional failures {}.",
+            summary.executed, summary.skipped, summary.optional_failed
+        ),
     );
 
     for warning in &summary.warnings {
-        eprintln!("Warning: {warning}");
+        print_warning(warning);
     }
 }

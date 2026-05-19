@@ -4,14 +4,17 @@ use zappy_core::{VariableResolutionInput, VariableValueMap, resolve_variables};
 
 use crate::cli::NewArgs;
 use crate::commands::helpers::{command_builtins, resolve_template, run_generation};
+use crate::diagnostics::{DiagnosticReport, print_error_with_source, print_info_with_details};
 
 /// Zappy command: new.
 pub fn new(args: &NewArgs) -> ExitCode {
     match zappy_core::parse_variable_overrides(args.vars.iter()) {
         Ok(overrides) => {
-            println!("Zappy new command:");
-            println!("template: {}", args.template);
-            println!("project: {}", args.project_name);
+            DiagnosticReport::info("Zappy `new` command")
+                .detail("Generating:")
+                .detail(format!("template {}", args.template))
+                .detail(format!("project {}", args.project_name))
+                .print();
 
             let Some(template) = resolve_template(args.templates_dir.clone(), &args.template)
             else {
@@ -28,7 +31,7 @@ pub fn new(args: &NewArgs) -> ExitCode {
             let resolved = match resolve_variables(&template.manifest.variables, &input) {
                 Ok(resolved) => resolved,
                 Err(error) => {
-                    eprintln!("Error: {error}");
+                    print_error_with_source("failed to resolve variables", error);
                     return ExitCode::FAILURE;
                 }
             };
@@ -49,7 +52,7 @@ pub fn new(args: &NewArgs) -> ExitCode {
             let plan = match zappy_fs::build_generation_plan(&plan_input) {
                 Ok(plan) => plan,
                 Err(error) => {
-                    eprintln!("Error: {error}");
+                    print_error_with_source("failed to build generation plan", error);
                     return ExitCode::FAILURE;
                 }
             };
@@ -68,7 +71,7 @@ pub fn new(args: &NewArgs) -> ExitCode {
             ExitCode::SUCCESS
         }
         Err(error) => {
-            eprintln!("Error: {error}");
+            print_error_with_source("failed to parse variable overrides", error);
             ExitCode::FAILURE
         }
     }
@@ -76,9 +79,9 @@ pub fn new(args: &NewArgs) -> ExitCode {
 
 /// Prints generation plan for the `new` command dry-run.
 fn print_generation_plan(plan: &zappy_core::GenerationPlan) {
-    println!(
-        "Dry-run generation plan for `{}`",
-        plan.template_id.as_str(),
+    print_info_with_details(
+        format!("Dry-run generation plan for {}", plan.template_id.as_str()),
+        String::new(),
     );
     println!("Output: {}", plan.output_dir.display());
 

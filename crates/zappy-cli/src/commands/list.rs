@@ -1,20 +1,15 @@
 use std::process::ExitCode;
 
-use zappy_fs::{DiscoveredTemplate, discover_templates};
+use zappy_fs::DiscoveredTemplate;
 
 use crate::cli::ListArgs;
-use crate::commands::helpers::discovery_config;
+use crate::commands::helpers::build_templates_catalogue;
+use crate::diagnostics::print_warning;
 
 /// List command stub.
 pub fn list(args: &ListArgs) -> ExitCode {
-    let config = discovery_config(args.templates_dir.clone());
-
-    let catalogue = match discover_templates(&config) {
-        Ok(catalogue) => catalogue,
-        Err(error) => {
-            eprintln!("Error: {error}");
-            return ExitCode::FAILURE;
-        }
+    let Some(catalogue) = build_templates_catalogue(args.templates_dir.clone()) else {
+        return ExitCode::FAILURE;
     };
 
     let templates = catalogue
@@ -24,7 +19,7 @@ pub fn list(args: &ListArgs) -> ExitCode {
         .collect::<Vec<_>>();
 
     if templates.is_empty() {
-        println!("No templates found.");
+        print_warning("no templates found");
         return ExitCode::SUCCESS;
     }
 

@@ -9,6 +9,7 @@ use zappy_hooks::HookPhase;
 
 use crate::cli::ValidateArgs;
 use crate::commands::helpers::{command_builtins, resolve_template, run_generation, run_hooks};
+use crate::diagnostics::{print_error, print_error_with_source, print_info};
 
 /// Validate command stub.
 pub fn validate(args: &ValidateArgs) -> ExitCode {
@@ -17,27 +18,24 @@ pub fn validate(args: &ValidateArgs) -> ExitCode {
     };
 
     let Some(validation) = template.manifest.validation.as_ref() else {
-        eprintln!(
-            "Error: template `{}` does not define validation config",
+        print_error(format!(
+            "template `{}` does not define validation config",
             args.template
-        );
+        ));
         return ExitCode::FAILURE;
     };
 
     let temp_dir = match TempDir::new() {
         Ok(temp_dir) => temp_dir,
         Err(error) => {
-            eprintln!("Error: failed to create validation temp dir: {error}");
+            print_error_with_source("failed to create validation temp dir", error);
             return ExitCode::FAILURE;
         }
     };
 
     let output_dir = validation_output_dir(temp_dir.path(), validation);
 
-    let project_name = output_dir
-        .file_name()
-        .and_then(|name| name.to_str())
-        .map_or_else(|| String::from("zappy-validation-output"), String::from);
+    let project_name = generate_project_name(&output_dir);
     let builtins = command_builtins(project_name);
     let input = VariableResolutionInput {
         explicit: validation.variables.clone(),
@@ -49,7 +47,7 @@ pub fn validate(args: &ValidateArgs) -> ExitCode {
     let resolved = match resolve_variables(&template.manifest.variables, &input) {
         Ok(resolved) => resolved,
         Err(error) => {
-            eprintln!("Error: {error}");
+            print_error_with_source("failed to resolve variables", error);
             return ExitCode::FAILURE;
         }
     };
@@ -65,7 +63,7 @@ pub fn validate(args: &ValidateArgs) -> ExitCode {
     let plan = match build_generation_plan(&plan_input) {
         Ok(plan) => plan,
         Err(error) => {
-            eprintln!("Error: {error}");
+            print_error_with_source("failed to build generation plan", error);
             return ExitCode::FAILURE;
         }
     };
@@ -111,17 +109,23 @@ pub fn validate(args: &ValidateArgs) -> ExitCode {
     if args.keep_temp {
         let temp_path = temp_dir.keep();
         if !temp_path.exists() {
-            eprintln!(
-                "Error: failed to keep validation temp dir `{}`",
+            print_error(format!(
+                "failed to keep validation temp dir @ `{}`",
                 temp_path.display()
-            );
+            ));
             return ExitCode::SUCCESS;
         }
 
-        println!("Validation temp dir kept at {}", temp_path.display());
+        print_info(format!(
+            "validation temp tir kept @ {}",
+            temp_path.display()
+        ));
     }
 
-    println!("Template `{}` validated successfully.", args.template);
+    print_info(format!(
+        "template `{}` validated successfully",
+        args.template
+    ));
     ExitCode::SUCCESS
 }
 
@@ -133,4 +137,12 @@ fn validation_output_dir(temp_root: &Path, validation: &ValidationConfig) -> Pat
         .unwrap_or("zappy-validation-output");
 
     temp_root.join(output_dir_name)
+}
+
+/// Generates validation project name.
+fn generate_project_name(output_dir: &Path) -> String {
+    output_dir
+        .file_name()
+        .and_then(|name| name.to_str())
+        .map_or_else(|| String::from("zappy-validation-output"), String::from)
 }

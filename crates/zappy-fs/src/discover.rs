@@ -1,6 +1,6 @@
 use std::collections::HashSet;
-use std::env;
 use std::path::PathBuf;
+use std::{env, fmt};
 
 use zappy_core::Manifest;
 
@@ -43,6 +43,22 @@ pub enum TemplateSearchPathKind {
     Bundled,
 }
 
+impl TemplateSearchPathKind {
+    /// Returns display label for template search path kind.
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Explicit => "explicit templates dir",
+            Self::EnvironmentTemplatesDir => "ZAPPY_TEMPLATES_DIR",
+            Self::EnvironmentConfigTemplates => "ZAPPY_CONFIG/templates",
+            Self::PlatformConfig => "platform-specific config templates",
+            Self::ExecutableRelative => "executable-relative templates",
+            Self::CurrentWorkingDirectory => "current working directory templates",
+            Self::Bundled => "built-in templates",
+        }
+    }
+}
+
 /// A candidate template search path.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TemplateSearchPath {
@@ -54,6 +70,13 @@ pub struct TemplateSearchPath {
 
     /// Missing/invalid path should be reported as an error?
     pub required: bool,
+}
+
+impl fmt::Display for TemplateSearchPath {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "{}: {}", self.kind.label(), self.path.display())?;
+        Ok(())
+    }
 }
 
 /// A discoverred template directory with its parsed manifest.

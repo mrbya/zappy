@@ -6,6 +6,7 @@ use std::process::ExitCode;
 use clap::{Args, Parser, Subcommand};
 
 use crate::commands;
+use crate::diagnostics::print_error_with_source;
 
 /// Zappy CLI.
 #[derive(Debug, Parser)]
@@ -223,7 +224,7 @@ pub fn run() -> ExitCode {
         match zappy_templates::clear_cache_dir() {
             Ok(()) => {}
             Err(error) => {
-                eprintln!("Error: {error}");
+                print_error_with_source("failed to clear template cache", error);
                 return ExitCode::FAILURE;
             }
         }
