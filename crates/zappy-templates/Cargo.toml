@@ -17,6 +17,7 @@ zappy-core.workspace = true
 thiserror.workspace = true
 directories.workspace = true
 include_dir.workspace = true
+tracing.workspace = true
 
 [dev-dependencies]
 

@@ -10,6 +10,8 @@ use crate::diagnostics::{DiagnosticReport, print_error_with_source, print_info_w
 pub fn new(args: &NewArgs) -> ExitCode {
     match zappy_core::parse_variable_overrides(args.vars.iter()) {
         Ok(overrides) => {
+            tracing::info!(template = %args.template, %args.project_name, "starting project generation");
+
             DiagnosticReport::info("Zappy `new` command")
                 .detail("Generating:")
                 .detail(format!("template {}", args.template))
@@ -36,6 +38,11 @@ pub fn new(args: &NewArgs) -> ExitCode {
                 }
             };
 
+            tracing::debug!(
+                variable_count = resolved.values.len(),
+                replacement_count = resolved.replacements.len()
+            );
+
             let output_dir = args
                 .output
                 .clone()
@@ -57,7 +64,15 @@ pub fn new(args: &NewArgs) -> ExitCode {
                 }
             };
 
+            tracing::debug!(
+                operations = plan.operations.len(),
+                warnings = plan.warnings.len(),
+                output = %plan.output_dir.display(),
+                "built generation plan"
+            );
+
             if args.dry_run {
+                tracing::info!("printing dry-run generation plan");
                 print_generation_plan(&plan);
                 return ExitCode::SUCCESS;
             }

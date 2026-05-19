@@ -7,6 +7,7 @@ use zappy_core::{VariableValue, parse_variable_overrides};
 
 use crate::cli::{Cli, Command, CreateArgs, InfoArgs, InitArgs, ListArgs, NewArgs, ValidateArgs};
 use crate::diagnostics::DiagnosticReport;
+use crate::tracing::default_filter;
 
 fn write_cli_template(templates_root: &Path, dir_name: &str, manifest: &str) -> PathBuf {
     let template_dir = templates_root.join(dir_name);
@@ -683,4 +684,32 @@ fn formats_error_with_details_and_hints() {
     assert!(rendered.contains("bundled templates"));
     assert!(rendered.contains("Hint:"));
     assert!(rendered.contains("zappy list"));
+}
+
+#[test]
+fn maps_zero_verbosity_to_warn() {
+    let filter = default_filter(0);
+
+    assert!(filter.contains("zappy_cli=warn"));
+}
+
+#[test]
+fn maps_single_verbosity_to_info() {
+    let filter = default_filter(1);
+
+    assert!(filter.contains("zappy_cli=info"));
+}
+
+#[test]
+fn maps_double_verbosity_to_debug() {
+    let filter = default_filter(2);
+
+    assert!(filter.contains("zappy_cli=debug"));
+}
+
+#[test]
+fn maps_triple_verbosity_to_trace() {
+    let filter = default_filter(3);
+
+    assert!(filter.contains("zappy_cli=trace"));
 }

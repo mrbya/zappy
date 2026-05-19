@@ -7,6 +7,7 @@ use clap::{Args, Parser, Subcommand};
 
 use crate::commands;
 use crate::diagnostics::print_error_with_source;
+use crate::tracing::init_trace;
 
 /// Zappy CLI.
 #[derive(Debug, Parser)]
@@ -220,9 +221,17 @@ pub struct CreateArgs {
 pub fn run() -> ExitCode {
     let cli = Cli::parse();
 
+    init_trace(cli.verbose);
+
+    tracing::debug!(verbose = cli.verbose, "initialized logging");
+
     if cli.clear {
+        tracing::info!("clearing template cache");
+
         match zappy_templates::clear_cache_dir() {
-            Ok(()) => {}
+            Ok(()) => {
+                tracing::debug!("template cache cleared");
+            }
             Err(error) => {
                 print_error_with_source("failed to clear template cache", error);
                 return ExitCode::FAILURE;

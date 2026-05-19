@@ -16,6 +16,7 @@ description = "Zappy - Pre/post generation + validation hooks"
 zappy-core.workspace = true
 thiserror.workspace = true
 indexmap.workspace = true
+tracing.workspace = true
 
 [dev-dependencies]
 camino.workspace = true

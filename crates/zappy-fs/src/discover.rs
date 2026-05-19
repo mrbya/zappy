@@ -174,6 +174,8 @@ pub fn resolve_template_search_paths(
         }]);
     }
 
+    tracing::debug!("resolving template search paths");
+
     let mut paths = Vec::new();
 
     if let Some(path) = env::var_os("ZAPPY_TEMPLATES_DIR") {
@@ -253,6 +255,8 @@ pub(crate) fn discover_templates_from_search_paths(
     let mut seen_ids = HashSet::new();
 
     for search_path in &search_paths {
+        tracing::debug!(path = %search_path.path.display(), kind = ?search_path.kind, "searching template path");
+
         let template_dirs = discover_template_dirs(search_path)?;
 
         for template_dir in template_dirs {
@@ -296,6 +300,12 @@ pub(crate) fn discover_templates_from_search_paths(
             .as_str()
             .cmp(right.manifest.template.id.as_str())
     });
+
+    tracing::debug!(
+        template_count = templates.len(),
+        shadowed_count = shadowed.len(),
+        "template discovery finished"
+    );
 
     Ok(TemplateCatalogue {
         templates,

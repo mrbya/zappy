@@ -19,11 +19,18 @@ use crate::diagnostics::{
 
 /// Constructs discovery config.
 pub fn discovery_config(templates_dir: Option<PathBuf>) -> DiscoveryConfig {
+    tracing::debug!(
+        explicit_templates_dir = ?templates_dir,
+        "building template discovery config"
+    );
     let bundled_templates_dir = if templates_dir.is_some() {
         None
     } else {
         match ensure_bundled_templates_available() {
-            Ok(path) => Some(path),
+            Ok(path) => {
+                tracing::debug!(path = %path.display(), "prepared bundled templates");
+                Some(path)
+            }
             Err(error) => {
                 print_warning_with_source("failed to prepare bundled templates", error);
                 None
@@ -47,10 +54,23 @@ pub(super) fn resolve_template(
 ) -> Option<DiscoveredTemplate> {
     let catalogue = build_templates_catalogue(templates_dir)?;
 
+    tracing::debug!(
+        discovered = catalogue.templates().len(),
+        shadowed = catalogue.shadowed().len(),
+        search_path = catalogue.search_paths().len(),
+        "template discovery completed"
+    );
+
     let Some(template) = catalogue.find_by_id(id) else {
         print_template_not_found(id, catalogue.search_paths(), catalogue.templates());
         return None;
     };
+
+    tracing::info!(
+        template = id,
+        path = %template.template_dir.display(),
+        "selected template"
+    );
 
     Some(template.clone())
 }
@@ -81,6 +101,12 @@ pub(super) fn run_generation(
     resolved: &ResolvedVariables,
     plan: &GenerationPlan,
 ) -> Result<(), ()> {
+    tracing::info!(
+        output = %plan.output_dir.display(),
+        operations = plan.operations.len(),
+        "materializing generation plan"
+    );
+
     if let Err(error) = create_directory(&plan.output_dir) {
         print_error_with_source("failed to create project dir", error);
         return Err(());
@@ -108,6 +134,14 @@ pub(super) fn run_generation(
             return Err(());
         }
     };
+
+    tracing::debug!(
+        directories = summary.directories_created,
+        text_files = summary.text_files_written,
+        binary_files = summary.binary_files_copied,
+        skipped = summary.skipped,
+        "generation plan materialized"
+    );
 
     if !no_hooks
         && run_hooks(
@@ -296,6 +330,12 @@ pub(super) fn run_hooks(
         output_dir,
         variables: resolved,
     };
+
+    tracing::debug!(
+        phase = phase_name,
+        hook_count = hooks.len(),
+        "running hooks"
+    );
 
     let summary = match execute_hooks(&input) {
         Ok(summary) => summary,

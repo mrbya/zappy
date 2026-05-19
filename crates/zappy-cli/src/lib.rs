@@ -73,6 +73,8 @@ pub mod cli;
 pub(crate) mod commands;
 /// Zappy user-facing diagnostics.
 pub(crate) mod diagnostics;
+/// Zappy tracing and debug diagnostics.
+pub(crate) mod tracing;
 
 // Tests.
 #[allow(clippy::panic)]
