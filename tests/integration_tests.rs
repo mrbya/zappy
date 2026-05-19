@@ -288,7 +288,7 @@ fn validate_generates_and_checks_template() {
         .assert()
         .success()
         .stdout(predicates::str::contains(
-            "Template `test-template` validated successfully.",
+            "Info: template `test-template` validated successfully",
         ));
 }
 
@@ -324,7 +324,8 @@ fn validate_keep_temp_prints_temp_dir() {
         ])
         .assert()
         .success()
-        .stdout(predicates::str::contains("Validation temp dir kept at"));
+        .stdout(predicates::str::contains("Info: validation temp"))
+        .stdout(predicates::str::contains("kept @"));
 }
 
 #[test]
@@ -524,8 +525,8 @@ fn explicit_empty_templates_dir_disables_bundled_discovery() {
         ])
         .assert()
         .success()
-        .stdout(predicates::str::contains("No templates found."))
-        .stdout(predicates::str::contains("rust-cli").not());
+        .stdout(predicates::str::contains("rust-cli").not())
+        .stderr(predicates::str::contains("Warning: no templates found"));
 }
 
 #[test]
@@ -798,7 +799,7 @@ args = ["--version"]
         .assert()
         .success()
         .stdout(predicates::str::contains(
-            "Template `validate-no-hooks` validated successfully.",
+            "Info: template `validate-no-hooks` validated successfully",
         ));
 }
 
