@@ -74,7 +74,7 @@ pub struct TemplateSearchPath {
 
 impl fmt::Display for TemplateSearchPath {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "{}: {}", self.kind.label(), self.path.display())?;
+        write!(f, "{}: {}", self.kind.label(), self.path.display())?;
         Ok(())
     }
 }
