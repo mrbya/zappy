@@ -58,7 +58,6 @@ pub fn new(args: &NewArgs) -> ExitCode {
             };
 
             if args.dry_run {
-                println!();
                 print_generation_plan(&plan);
                 return ExitCode::SUCCESS;
             }

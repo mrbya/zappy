@@ -6,6 +6,7 @@ use clap::Parser;
 use zappy_core::{VariableValue, parse_variable_overrides};
 
 use crate::cli::{Cli, Command, CreateArgs, InfoArgs, InitArgs, ListArgs, NewArgs, ValidateArgs};
+use crate::diagnostics::DiagnosticReport;
 
 fn write_cli_template(templates_root: &Path, dir_name: &str, manifest: &str) -> PathBuf {
     let template_dir = templates_root.join(dir_name);
@@ -666,4 +667,20 @@ name = "Rust CLI"
     });
 
     assert_eq!(result, ExitCode::FAILURE);
+}
+
+#[test]
+fn formats_error_with_details_and_hints() {
+    let report = DiagnosticReport::error("template `foo` was not found")
+        .detail("Searched:")
+        .detail("  bundled templates: /tmp/templates")
+        .hint("run `zappy list` to see available templates");
+
+    let rendered = report.to_string();
+
+    assert!(rendered.contains("Error: template `foo` was not found"));
+    assert!(rendered.contains("Searched:"));
+    assert!(rendered.contains("bundled templates"));
+    assert!(rendered.contains("Hint:"));
+    assert!(rendered.contains("zappy list"));
 }
