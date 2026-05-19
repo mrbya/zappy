@@ -160,7 +160,8 @@ pub fn print_info(title: impl Into<String>) {
 /// Prints an info message with details.
 pub fn print_info_with_details(title: impl Into<String>, details: impl fmt::Display) {
     DiagnosticReport::info(title)
-        .detail(format!("Details: {details}"))
+        .detail("Details:")
+        .detail(format!("  {details}"))
         .print();
 }
 

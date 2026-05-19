@@ -318,7 +318,7 @@ pub(super) fn print_hook_summary(phase: &str, summary: &zappy_hooks::HookExecuti
     print_info_with_details(
         format!("hooks ({phase}) done"),
         format!(
-            "executed {}, skipped {}, optional failures {}.",
+            "Hooks - executed {}, skipped {}, optional failures {}.",
             summary.executed, summary.skipped, summary.optional_failed
         ),
     );
