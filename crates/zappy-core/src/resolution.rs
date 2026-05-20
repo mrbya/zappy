@@ -395,17 +395,19 @@ fn validate_regex(
         return Ok(());
     };
 
-    let VariableValue::String(value) = value else {
+    let rendered = value.render();
+
+    if !matches!(value, VariableValue::String(_)) {
         tracing::warn!(
             variable = %name,
-            value = %value.render(),
+            value = %rendered,
             "expected string variable"
         );
         return Err(CoreError::RegexVariableNotString {
             name: name.to_owned(),
-            value: value.render(),
+            value: rendered,
         });
-    };
+    }
 
     let regex = regex::Regex::new(pattern).map_err(|source| CoreError::InvalidVariableRegex {
         name: String::from(name),
@@ -413,7 +415,7 @@ fn validate_regex(
         source,
     })?;
 
-    if regex.is_match(value) {
+    if regex.is_match(&rendered) {
         tracing::debug!(
             variable = %name,
             regex = %pattern,
@@ -430,7 +432,7 @@ fn validate_regex(
 
     Err(CoreError::InvalidRegexVariableValue {
         name: String::from(name),
-        value: value.clone(),
+        value: rendered,
         regex: String::from(pattern),
     })
 }
