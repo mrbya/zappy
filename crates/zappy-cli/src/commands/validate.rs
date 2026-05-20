@@ -40,98 +40,26 @@ pub fn validate(args: &ValidateArgs) -> ExitCode {
     let output_dir = validation_output_dir(temp_dir.path(), validation);
     tracing::debug!(output = %output_dir.display(), "prepared validation output directory");
 
-    let project_name = generate_project_name(&output_dir);
-    let builtins = command_builtins(project_name);
-    let input = VariableResolutionInput {
-        explicit: validation.variables.clone(),
-        interactive: VariableValueMap::new(),
-        user_defaults: VariableValueMap::new(),
-        builtins,
-    };
-
-    let resolved = match resolve_variables(&template.manifest.variables, &input) {
-        Ok(resolved) => resolved,
-        Err(error) => {
-            tracing::warn!(template = %args.template, %error, "failed to resolve validation variables");
-            print_error_with_source("failed to resolve variables", error);
-            return ExitCode::FAILURE;
-        }
-    };
-
-    let plan_input = BuildPlanInput {
-        template_dir: &template.template_dir,
-        manifest: &template.manifest,
-        variables: &resolved,
-        output_dir: output_dir.clone(),
-        force: true,
-    };
-
-    let plan = match build_generation_plan(&plan_input) {
-        Ok(plan) => plan,
-        Err(error) => {
-            tracing::warn!(template = %args.template, output = %output_dir.display(), %error, "failed to build validation generation plan");
-            print_error_with_source("failed to build generation plan", error);
-            return ExitCode::FAILURE;
-        }
+    let Some((resolved, plan)) = resolve_validation_plan(
+        args,
+        &template.manifest,
+        &template.template_dir,
+        validation,
+        &output_dir,
+    ) else {
+        return ExitCode::FAILURE;
     };
 
     if run_generation(args.no_hooks, true, &template, &resolved, &plan).is_err() {
         return ExitCode::FAILURE;
     }
 
-    let setup_result = run_hooks(
-        "validation setup",
-        HookPhase::ValidationSetup,
-        &validation.setup,
-        &output_dir,
-        &resolved,
-    );
-
-    let steps_result = if setup_result.is_err() {
-        tracing::debug!(template = %args.template, "skipping validation steps because setup failed");
-        true
-    } else {
-        run_hooks(
-            "validation steps",
-            HookPhase::ValidationStep,
-            &validation.steps,
-            &output_dir,
-            &resolved,
-        )
-        .is_err()
-    };
-
-    if steps_result
-        | run_hooks(
-            "validation teardown",
-            HookPhase::ValidationTeardown,
-            &validation.teardown,
-            &output_dir,
-            &resolved,
-        )
-        .is_err()
-    {
+    if run_validation_hooks(args, validation, &output_dir, &resolved) {
         tracing::warn!(template = %args.template, "validation hooks reported failure");
         return ExitCode::FAILURE;
     }
 
-    if args.keep_temp {
-        let temp_path = temp_dir.keep();
-        if !temp_path.exists() {
-            tracing::warn!(path = %temp_path.display(), "validation temp dir was not preserved after keep request");
-            print_error(format!(
-                "failed to keep validation temp dir @ `{}`",
-                temp_path.display()
-            ));
-            return ExitCode::SUCCESS;
-        }
-
-        tracing::info!(path = %temp_path.display(), "validation temp dir kept");
-        print_info(format!(
-            "validation temp tir kept @ {}",
-            temp_path.display()
-        ));
-    }
+    maybe_keep_validation_temp_dir(args.keep_temp, temp_dir);
 
     tracing::info!(template = %args.template, "template validation completed successfully");
     print_info(format!(
@@ -157,4 +85,113 @@ fn generate_project_name(output_dir: &Path) -> String {
         .file_name()
         .and_then(|name| name.to_str())
         .map_or_else(|| String::from("zappy-validation-output"), String::from)
+}
+
+/// Resolves variables and builds the validation generation plan.
+fn resolve_validation_plan(
+    args: &ValidateArgs,
+    manifest: &zappy_core::Manifest,
+    template_dir: &Path,
+    validation: &ValidationConfig,
+    output_dir: &Path,
+) -> Option<(zappy_core::ResolvedVariables, zappy_core::GenerationPlan)> {
+    let project_name = generate_project_name(output_dir);
+    let builtins = command_builtins(project_name);
+    let input = VariableResolutionInput {
+        explicit: validation.variables.clone(),
+        interactive: VariableValueMap::new(),
+        user_defaults: VariableValueMap::new(),
+        builtins,
+    };
+
+    let resolved = match resolve_variables(&manifest.variables, &input) {
+        Ok(resolved) => resolved,
+        Err(error) => {
+            tracing::warn!(template = %args.template, %error, "failed to resolve validation variables");
+            print_error_with_source("failed to resolve variables", error);
+            return None;
+        }
+    };
+
+    let plan_input = BuildPlanInput {
+        template_dir,
+        manifest,
+        variables: &resolved,
+        output_dir: output_dir.to_path_buf(),
+        force: true,
+    };
+
+    let plan = match build_generation_plan(&plan_input) {
+        Ok(plan) => plan,
+        Err(error) => {
+            tracing::warn!(template = %args.template, output = %output_dir.display(), %error, "failed to build validation generation plan");
+            print_error_with_source("failed to build generation plan", error);
+            return None;
+        }
+    };
+
+    Some((resolved, plan))
+}
+
+/// Runs validation setup steps and teardown hooks.
+fn run_validation_hooks(
+    args: &ValidateArgs,
+    validation: &ValidationConfig,
+    output_dir: &Path,
+    resolved: &zappy_core::ResolvedVariables,
+) -> bool {
+    let setup_result = run_hooks(
+        "validation setup",
+        HookPhase::ValidationSetup,
+        &validation.setup,
+        output_dir,
+        resolved,
+    );
+
+    let steps_failed = if setup_result.is_err() {
+        tracing::debug!(template = %args.template, "skipping validation steps because setup failed");
+        true
+    } else {
+        run_hooks(
+            "validation steps",
+            HookPhase::ValidationStep,
+            &validation.steps,
+            output_dir,
+            resolved,
+        )
+        .is_err()
+    };
+
+    steps_failed
+        | run_hooks(
+            "validation teardown",
+            HookPhase::ValidationTeardown,
+            &validation.teardown,
+            output_dir,
+            resolved,
+        )
+        .is_err()
+}
+
+/// Keeps the validation temp directory if requested.
+fn maybe_keep_validation_temp_dir(keep_temp: bool, temp_dir: TempDir) {
+    if !keep_temp {
+        return;
+    }
+
+    let temp_path = temp_dir.keep();
+    if !temp_path.exists() {
+        tracing::warn!(path = %temp_path.display(), "validation temp dir was not preserved after keep request");
+        print_error(format!(
+            "failed to keep validation temp dir @ `{}`",
+            temp_path.display()
+        ));
+        return;
+    }
+
+    tracing::info!(path = %temp_path.display(), "validation temp dir kept");
+    print_info(format!(
+        "validation temp tir kept @ {}",
+        temp_path.display()
+    ));
 }
