@@ -842,3 +842,49 @@ fn init_fails_for_existing_template_without_force() {
         .failure()
         .stderr(predicates::str::contains("already exists"));
 }
+
+#[test]
+fn vvv_output_contains_all_trace_levels() {
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args(["-vvv", "info", "--template", "non-existent"])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("WARN"))
+        .stderr(predicates::str::contains("INFO"))
+        .stderr(predicates::str::contains("DEBUG"))
+        .stderr(predicates::str::contains("TRACE"));
+}
+
+#[test]
+fn vv_output_contains_all_but_trace() {
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args(["-vv", "info", "--template", "non-existent"])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("WARN"))
+        .stderr(predicates::str::contains("INFO"))
+        .stderr(predicates::str::contains("DEBUG"));
+}
+
+#[test]
+fn v_output_contains_warn_and_info() {
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args(["-vv", "info", "--template", "non-existent"])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("WARN"))
+        .stderr(predicates::str::contains("INFO"));
+}
+
+#[test]
+fn default_verbosity_output_contains_warn_traces() {
+    assert_cmd::Command::cargo_bin("zappy")
+        .expect("zappy binary should exist")
+        .args(["-vv", "info", "--template", "non-existent"])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("WARN"));
+}
