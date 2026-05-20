@@ -74,6 +74,43 @@ pub enum CoreError {
         choices: String,
     },
 
+    /// Variable value did not pass regex validation.
+    #[error("invalid value `{value}` for variable `{name}`, expected /{regex}/")]
+    InvalidRegexVariableValue {
+        /// Variable name.
+        name: String,
+
+        /// Invalid value.
+        value: String,
+
+        /// Regex used to validate value.
+        regex: String,
+    },
+
+    /// Invalid regex to validate variable.
+    #[error("invalid regex `{regex}` provided for variable `{name}`")]
+    InvalidVariableRegex {
+        /// Variable name.
+        name: String,
+
+        /// Variable regex.
+        regex: String,
+
+        /// Underlying regex error.
+        #[source]
+        source: regex::Error,
+    },
+
+    /// Non-string value provided for a regex variable.
+    #[error("variable `{name}` defines regex_string, but resolved vale `{value}` is not string")]
+    RegexVariableNotString {
+        /// Variable name.
+        name: String,
+
+        /// Invalid value.
+        value: String,
+    },
+
     /// Required when variable not found in the manifest.
     #[error("chosen `required_when` variable for `{name}`: `{when}` was not found in manifest")]
     InvalidRequiredWhen {

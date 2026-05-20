@@ -61,6 +61,7 @@ include_dir             = { version = "0.7" }
 sha2                    = { version = "0.10" }
 tracing                 = { version = "0.1" }
 tracing-subscriber      = { version = "0.3", features = ["env-filter"] }
+regex                   = { version = "1" }
 
 [dependencies]
 zappy-cli.workspace = true

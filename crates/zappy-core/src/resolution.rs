@@ -131,6 +131,7 @@ fn resolve_declared_values(
         };
 
         validate_choices(name, &value, &spec.choices)?;
+        validate_regex(name, &value, spec.validation_regex.as_deref())?;
         resolved_values.insert(name.clone(), value);
     }
 
@@ -381,6 +382,56 @@ fn validate_choices(
         name: String::from(name),
         value,
         choices,
+    })
+}
+
+/// Validates variable value using configured regex.
+fn validate_regex(
+    name: &str,
+    value: &VariableValue,
+    validation_regex: Option<&str>,
+) -> CoreResult<()> {
+    let Some(pattern) = validation_regex else {
+        return Ok(());
+    };
+
+    let VariableValue::String(value) = value else {
+        tracing::warn!(
+            variable = %name,
+            value = %value.render(),
+            "expected string variable"
+        );
+        return Err(CoreError::RegexVariableNotString {
+            name: name.to_owned(),
+            value: value.render(),
+        });
+    };
+
+    let regex = regex::Regex::new(pattern).map_err(|source| CoreError::InvalidVariableRegex {
+        name: String::from(name),
+        regex: String::from(pattern),
+        source,
+    })?;
+
+    if regex.is_match(value) {
+        tracing::debug!(
+            variable = %name,
+            regex = %pattern,
+            "variable regex matches"
+        );
+        return Ok(());
+    }
+
+    tracing::warn!(
+        variable = %name,
+        regex = %pattern,
+        "variable regex does not match"
+    );
+
+    Err(CoreError::InvalidRegexVariableValue {
+        name: String::from(name),
+        value: value.clone(),
+        regex: String::from(pattern),
     })
 }
 

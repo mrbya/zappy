@@ -1565,6 +1565,7 @@ dependencies = [
  "camino",
  "heck",
  "indexmap",
+ "regex",
  "serde",
  "thiserror",
  "toml",
