@@ -409,10 +409,17 @@ fn validate_regex(
         });
     }
 
-    let regex = regex::Regex::new(pattern).map_err(|source| CoreError::InvalidVariableRegex {
-        name: String::from(name),
-        regex: String::from(pattern),
-        source,
+    let regex = regex::Regex::new(pattern).map_err(|source| {
+        tracing::debug!(
+            variable = %name,
+            regex = %pattern,
+            "invalid regex pattern"
+        );
+        CoreError::InvalidVariableRegex {
+            name: String::from(name),
+            regex: String::from(pattern),
+            source,
+        }
     })?;
 
     if regex.is_match(&rendered) {

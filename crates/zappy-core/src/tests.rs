@@ -1,4 +1,7 @@
+use indexmap::IndexMap;
+
 use super::*;
+use crate::variables::VariableMap;
 
 const MINIMAL_MANIFEST: &str = r#"
 [template]
@@ -1409,6 +1412,50 @@ name = "Unknown Builtin"
 }
 
 #[test]
+fn var_regex_passes_manifest_validation() {
+    Manifest::from_toml_str(
+        r#"
+[template]
+id = "with-regex"
+name = "With Regex"
+description = "Variable regex test"
+language = "test"
+version = "0.1.0"
+
+[variables.package_name]
+required = true
+default = "demo"
+validation_regex = "[0-9a-zA-Z-_]*"
+"#,
+        "zappy.toml",
+    )
+    .expect("variable with validation regex should parse");
+}
+
+//#[test]
+//fn empty_regex_fails_manifest_validation() {
+//    let error = Manifest::from_toml_str(
+//        r#"
+//[template]
+//id = "empty-regex"
+//name = "Empty Regex"
+//description = "Empty regex test"
+//language = "test"
+//version = "0.1.0"
+//
+//[variables.package_name]
+//required = true
+//default = "demo"
+//validation_regex = ""
+//"#,
+//        "zappy.toml",
+//    )
+//    .expect_err("empty regex should fail validation");
+//
+//    assert!(matches!(error, CoreError::ParseManifest { .. }));
+//}
+
+#[test]
 fn evaluates_conditions_only_for_true_boolean_values() {
     let mut values = VariableValueMap::new();
     values.insert(String::from("enabled"), VariableValue::Bool(true));
@@ -1448,4 +1495,73 @@ fn rejects_empty_and_absolute_rendered_paths() {
     let absolute = crate::render::render_relative_path("/tmp/project", &replacements)
         .expect_err("absolute rendered path should fail");
     assert!(absolute.to_string().contains("must be relative"));
+}
+
+#[test]
+fn regex_valid_string_passes() {
+    let mut variables = VariableMap::new();
+    variables.insert(
+        String::from("package_name"),
+        VariableSpec {
+            prompt: None,
+            default: Some(VariableValue::String(String::from("my-tool"))),
+            required: true,
+            required_when: None,
+            conflicts_with: Vec::new(),
+            choices: Vec::new(),
+            validation_regex: Some(String::from("^[a-z][a-z0-9_-]*$")),
+            transforms: Vec::new(),
+            placeholders: IndexMap::new(),
+        },
+    );
+
+    let resolved = resolve_variables(&variables, &VariableResolutionInput::default())
+        .expect("value should pass as it matches regex");
+    assert!(resolved.values.contains_key("package_name"));
+}
+
+#[test]
+fn regex_invalid_string_fails() {
+    let mut variables = VariableMap::new();
+    variables.insert(
+        String::from("package_name"),
+        VariableSpec {
+            prompt: None,
+            default: Some(VariableValue::String(String::from("123 invalid"))),
+            required: true,
+            required_when: None,
+            conflicts_with: Vec::new(),
+            choices: Vec::new(),
+            validation_regex: Some(String::from("^[a-z][a-z0-9_-]*$")),
+            transforms: Vec::new(),
+            placeholders: IndexMap::new(),
+        },
+    );
+
+    let error = resolve_variables(&variables, &VariableResolutionInput::default())
+        .expect_err("invalid value should fail regex validation");
+    assert!(matches!(error, CoreError::InvalidRegexVariableValue { .. }));
+}
+
+#[test]
+fn regex_non_string_fails() {
+    let mut variables = VariableMap::new();
+    variables.insert(
+        String::from("package_name"),
+        VariableSpec {
+            prompt: None,
+            default: Some(VariableValue::Bool(true)),
+            required: true,
+            required_when: None,
+            conflicts_with: Vec::new(),
+            choices: Vec::new(),
+            validation_regex: Some(String::from("^[a-z][a-z0-9_-]*$")),
+            transforms: Vec::new(),
+            placeholders: IndexMap::new(),
+        },
+    );
+
+    let error = resolve_variables(&variables, &VariableResolutionInput::default())
+        .expect_err("invalid value should fail regex validation");
+    assert!(matches!(error, CoreError::RegexVariableNotString { .. }));
 }
