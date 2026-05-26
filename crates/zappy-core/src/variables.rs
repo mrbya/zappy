@@ -183,6 +183,7 @@ impl RawVariableSpec {
 
         for (name, raw) in variables {
             validate_variable_name(&name)?;
+            validate_regex_slug(&name, raw.validation_regex.as_deref())?;
 
             let spec = VariableSpec::try_from(raw)?;
 
@@ -192,7 +193,6 @@ impl RawVariableSpec {
         for (name, spec) in &validated {
             if let Some(var) = spec.required_when.as_ref() {
                 validate_variable_name(var)?;
-                validate_regex_slug(name, spec.validation_regex.as_deref())?;
 
                 if name == var {
                     return Err(CoreError::RequireSelf {
@@ -348,11 +348,8 @@ pub(crate) fn validate_variable_name(name: &str) -> CoreResult<()> {
 /// Validates variable regex syntax.
 fn validate_regex_slug(name: &str, regex: Option<&str>) -> CoreResult<()> {
     let Some(pattern) = regex else {
-        eprintln!("regex = None");
         return Ok(());
     };
-
-    eprintln!("passed in regex slug: {pattern}");
 
     if pattern.trim().is_empty() || pattern.trim().len() <= 1 {
         return Err(CoreError::InvalidManifest {
