@@ -1432,28 +1432,28 @@ validation_regex = "[0-9a-zA-Z-_]*"
     .expect("variable with validation regex should parse");
 }
 
-//#[test]
-//fn empty_regex_fails_manifest_validation() {
-//    let error = Manifest::from_toml_str(
-//        r#"
-//[template]
-//id = "empty-regex"
-//name = "Empty Regex"
-//description = "Empty regex test"
-//language = "test"
-//version = "0.1.0"
-//
-//[variables.package_name]
-//required = true
-//default = "demo"
-//validation_regex = ""
-//"#,
-//        "zappy.toml",
-//    )
-//    .expect_err("empty regex should fail validation");
-//
-//    assert!(matches!(error, CoreError::ParseManifest { .. }));
-//}
+#[test]
+fn empty_regex_fails_manifest_validation() {
+    let error = Manifest::from_toml_str(
+        r#"
+[template]
+id = "empty-regex"
+name = "Empty Regex"
+description = "Empty regex test"
+language = "test"
+version = "0.1.0"
+
+[variables.package_name]
+required = true
+default = "demo"
+validation_regex = ""
+"#,
+        "zappy.toml",
+    )
+    .expect_err("empty regex should fail validation");
+
+    assert!(matches!(error, CoreError::InvalidManifest { .. }));
+}
 
 #[test]
 fn evaluates_conditions_only_for_true_boolean_values() {

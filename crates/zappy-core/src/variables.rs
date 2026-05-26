@@ -354,7 +354,7 @@ fn validate_regex_slug(name: &str, regex: Option<&str>) -> CoreResult<()> {
 
     eprintln!("passed in regex slug: {pattern}");
 
-    if pattern.trim().is_empty() {
+    if pattern.trim().is_empty() || pattern.trim().len() <= 1 {
         return Err(CoreError::InvalidManifest {
             message: format!("validation_regex for variable `{name}` must not be empty"),
         });
